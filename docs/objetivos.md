@@ -28,8 +28,18 @@ Atração (Instagram, tráfego pago) → Entrada no grupo de WhatsApp → Relaci
 - **Marketing Manager:** conteúdo e relacionamento no Instagram/Facebook devem ter chamada clara para o grupo de WhatsApp como próximo passo; peças de venda devem sempre considerar o grupo como o ambiente onde a conversão de fato acontece, não apenas o post em si.
 - **Analytics Manager:** deve acompanhar e reportar, no mínimo, (1) faturamento mensal vs. meta de R$ 7.000, e (2) volume de entradas no grupo de WhatsApp, como indicadores centrais de progresso.
 
+## Baseline real (fornecido pelo usuário em 16/07/2026)
+
+Primeiros dados reais de negócio recebidos pelo ecossistema — antes disso, o departamento operava sem baseline. Os valores abaixo foram informados pelo usuário **como faixas**, não como valores pontuais exatos, e devem continuar sendo tratados como faixas em qualquer análise até que dados mais precisos (ex.: extrato de vendas) estejam disponíveis:
+
+- **Faturamento mensal atual:** R$ 2.000 a R$ 3.000/mês.
+- **Ticket médio atual:** R$ 200 a R$ 300.
+- **Tamanho atual do grupo de WhatsApp/VIP:** em média 90 pessoas.
+
+Leitura detalhada, cálculos derivados e alertas de ritmo vs. meta estão registrados em `docs/analytics/relatorios.md` (entrada de 16/07/2026), mantido pelo Analytics Manager.
+
 ## Pendências / a aprofundar
 
 - Metas após outubro de 2026 (o que vem depois de atingir/reavaliar essa meta).
 - Metas secundárias além do faturamento e do crescimento do grupo (ex.: construção de autoridade/conteúdo, lançamento de novas linhas — ver pendência em `marca.md`).
-- Ticket médio atual e número de clientes ativos, para calibrar se a meta de R$ 7.000/mês depende mais de novos clientes ou de recompra/ticket médio.
+- Número de clientes ativos/únicos e taxa de recompra, para calibrar se a meta de R$ 7.000/mês depende mais de captar clientes novos ou de aumentar recompra/ticket médio dos atuais (ticket médio em si já foi informado como faixa — ver "Baseline real" acima).

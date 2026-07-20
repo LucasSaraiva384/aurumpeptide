@@ -22,7 +22,7 @@ Categorias principais atualmente comercializadas:
 
 O volume de vendas hoje se concentra em canais diretos e relacionais, não em e-commerce tradicional ou marketplace:
 
-- **Instagram** — principal canal de vendas e relacionamento.
+- **Instagram** ([@aurumpeptide](https://www.instagram.com/aurumpeptide/)) — principal canal de vendas e relacionamento.
 - **Facebook (página)** — canal de presença/conteúdo ativo.
 - **WhatsApp** — atendimento e fechamento de vendas.
 - **Grupo de WhatsApp** (também chamado de **"Grupo VIP"** — é o mesmo grupo, dois nomes) — comunidade/base de clientes recorrentes e principal motor de conversão (ver `docs/objetivos.md`).
