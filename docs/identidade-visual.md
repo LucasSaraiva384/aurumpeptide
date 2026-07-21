@@ -6,14 +6,14 @@ Este documento é normativo: qualquer peça visual produzida pelo ecossistema (f
 
 **Primária:**
 - Verde profundo institucional — `#0D1B16`
-- Verde esmeralda escuro
+- Verde esmeralda escuro — `#0F2E25`
 - Dourado premium — `#C6A55A`
 
 **Secundária:**
 - Branco gelo
 - Grafite escuro
 
-> Usadas por nome (sem hex formalizado por enquanto) — confirmado pelo usuário, não é mais pendência bloqueante.
+> Hex de verde esmeralda escuro formalizado pelo usuário em 2026-07-21 (`#0F2E25`). Branco gelo e grafite escuro seguem usados por nome, sem hex formalizado — confirmado pelo usuário, não é pendência bloqueante.
 
 **Nunca usar:**
 - Roxo

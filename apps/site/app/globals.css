@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/*
+ * @source explícito: @aurum/ui é consumido como source TS de um pacote do
+ * workspace (symlink dentro de node_modules). A detecção automática de
+ * conteúdo do Tailwind v4 não entra em node_modules por padrão, então sem
+ * isso as classes usadas dentro do pacote (Button, Card, Container) seriam
+ * purgadas do CSS final.
+ */
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+
+/*
+ * Tokens de marca — espelham docs/identidade-visual.md via
+ * packages/ui/src/tokens.ts. Mantidos em sincronia manualmente: o Tailwind
+ * v4 lê tema a partir de CSS (@theme), enquanto o pacote UI expõe os
+ * mesmos valores em TS para uso fora de classes utilitárias.
+ */
+@theme {
+  --color-aurum-green-deep: #0d1b16;
+  --color-aurum-emerald: #0f2e25;
+  --color-aurum-gold: #c6a55a;
+  --color-aurum-ice: #f4f2ed;
+  --color-aurum-graphite: #2b2b2b;
+
+  --font-heading: "Iowan Old Style", "Palatino Linotype", Georgia, ui-serif, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ui-sans-serif, sans-serif;
+}
+
+/*
+ * Fundo padrão institucional (docs/identidade-visual.md): verde profundo +
+ * gradiente radial muito suave (leve realce no topo) + glow dourado central
+ * inferior sutil + textura leve tipo canvas (ruído SVG em opacidade muito
+ * baixa, gerado inline para não depender de imagem externa). Sem bokeh, sem
+ * luz laranja, sem brilho exagerado.
+ */
+body {
+  min-height: 100vh;
+  background-color: var(--color-aurum-green-deep);
+  background-image:
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(15, 61, 46, 0.55), rgba(13, 27, 22, 0) 60%),
+    radial-gradient(ellipse 80% 45% at 50% 115%, rgba(198, 165, 90, 0.14), rgba(13, 27, 22, 0) 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat, repeat;
+  color: var(--color-aurum-ice);
+  font-family: var(--font-body);
+}

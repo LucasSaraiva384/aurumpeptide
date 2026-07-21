@@ -9,6 +9,9 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+.next/
+.turbo/
+next-env.d.ts
 
 # Environment
 .env
