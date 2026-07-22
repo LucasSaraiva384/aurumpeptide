@@ -7,6 +7,7 @@ import { buildWhatsappLink } from "@/lib/whatsapp";
 
 export function ProductCard({ produto }: { produto: Produto }) {
   const detalheHref = `/produtos/${produto.id}`;
+  const capa = produto.imagens[0] ?? produto.imagem_url;
 
   return (
     <Card interactive className="flex h-full flex-col gap-4">
@@ -14,12 +15,12 @@ export function ProductCard({ produto }: { produto: Produto }) {
         href={detalheHref}
         className="-mx-6 -mt-6 block overflow-hidden rounded-t-lg bg-aurum-ice/[0.04] p-5"
       >
-        {produto.imagem_url ? (
+        {capa ? (
           // <img>, não next/image: o domínio do Storage do Supabase varia por
           // projeto e ainda não está configurado em remotePatterns.
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={produto.imagem_url}
+            src={capa}
             alt={produto.nome}
             className="aspect-[4/5] w-full rounded-md object-contain"
           />

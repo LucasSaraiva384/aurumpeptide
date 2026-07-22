@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,17 +15,62 @@ import type { Produto } from "@/lib/types";
 export function ProdutoForm({ produto }: { produto?: Produto }) {
   const router = useRouter();
   const isEdicao = Boolean(produto);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [nome, setNome] = useState(produto?.nome ?? "");
   const [descricao, setDescricao] = useState(produto?.descricao ?? "");
   const [preco, setPreco] = useState(produto ? String(produto.preco) : "");
   const [categoria, setCategoria] = useState(produto?.categoria ?? "");
-  const [imagemUrl, setImagemUrl] = useState(produto?.imagem_url ?? "");
+  const [imagens, setImagens] = useState<string[]>(produto?.imagens ?? []);
+  const [enviandoImagem, setEnviandoImagem] = useState(false);
   const [estoqueAtual, setEstoqueAtual] = useState(String(produto?.estoque_atual ?? 0));
   const [estoqueMinimo, setEstoqueMinimo] = useState(String(produto?.estoque_minimo ?? 0));
   const [ativo, setAtivo] = useState(produto?.ativo ?? true);
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+
+  async function handleUpload(event: FormEvent<HTMLInputElement>) {
+    const files = event.currentTarget.files;
+    if (!files || files.length === 0) return;
+
+    setEnviandoImagem(true);
+    const supabase = createClient();
+    const novasUrls: string[] = [];
+
+    for (const file of Array.from(files)) {
+      const extensao = file.name.split(".").pop();
+      const caminho = `${crypto.randomUUID()}.${extensao}`;
+      const { error } = await supabase.storage.from("produtos").upload(caminho, file);
+
+      if (error) {
+        toast.error("Erro ao enviar imagem", { description: error.message });
+        continue;
+      }
+
+      const { data } = supabase.storage.from("produtos").getPublicUrl(caminho);
+      novasUrls.push(data.publicUrl);
+    }
+
+    setImagens((atuais) => [...atuais, ...novasUrls]);
+    setEnviandoImagem(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function removerImagem(index: number) {
+    setImagens((atuais) => atuais.filter((_, i) => i !== index));
+  }
+
+  function moverImagem(index: number, direcao: -1 | 1) {
+    setImagens((atuais) => {
+      const destino = index + direcao;
+      if (destino < 0 || destino >= atuais.length) return atuais;
+      const copia = [...atuais];
+      const temp = copia[index]!;
+      copia[index] = copia[destino]!;
+      copia[destino] = temp;
+      return copia;
+    });
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,7 +83,7 @@ export function ProdutoForm({ produto }: { produto?: Produto }) {
       descricao: descricao || null,
       preco: Number(preco),
       categoria: categoria || null,
-      imagem_url: imagemUrl || null,
+      imagens,
       estoque_atual: Number(estoqueAtual),
       estoque_minimo: Number(estoqueMinimo),
       ativo,
@@ -104,13 +149,69 @@ export function ProdutoForm({ produto }: { produto?: Produto }) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="imagemUrl">URL da imagem</Label>
+            <Label htmlFor="imagens">Fotos do produto</Label>
+            <p className="text-xs text-muted-foreground">
+              A primeira foto é a capa no catálogo. As demais aparecem no carrossel da página do produto.
+            </p>
+
+            {imagens.length > 0 && (
+              <div className="flex flex-wrap gap-3 py-1">
+                {imagens.map((url, index) => (
+                  <div key={url} className="relative w-24">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={`Foto ${index + 1}`}
+                      className="aspect-square w-24 rounded-md border border-border object-cover"
+                    />
+                    {index === 0 && (
+                      <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
+                        Capa
+                      </span>
+                    )}
+                    <div className="mt-1 flex justify-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moverImagem(index, -1)}
+                        disabled={index === 0}
+                        className="rounded border border-border px-1.5 text-xs text-muted-foreground disabled:opacity-30"
+                        aria-label="Mover para a esquerda"
+                      >
+                        ←
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removerImagem(index)}
+                        className="rounded border border-border px-1.5 text-xs text-destructive"
+                        aria-label="Remover foto"
+                      >
+                        ✕
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moverImagem(index, 1)}
+                        disabled={index === imagens.length - 1}
+                        className="rounded border border-border px-1.5 text-xs text-muted-foreground disabled:opacity-30"
+                        aria-label="Mover para a direita"
+                      >
+                        →
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <Input
-              id="imagemUrl"
-              value={imagemUrl ?? ""}
-              onChange={(e) => setImagemUrl(e.target.value)}
-              placeholder="https://..."
+              id="imagens"
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleUpload}
+              disabled={enviandoImagem}
             />
+            {enviandoImagem && <p className="text-xs text-muted-foreground">Enviando...</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

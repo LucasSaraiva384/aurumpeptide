@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge, Container, ButtonLink } from "@aurum/ui";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { currencyFormatter } from "@/lib/format";
+import { ProductGallery } from "@/components/ProductGallery";
 import type { Produto } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -29,9 +29,10 @@ export default async function ProdutoPage({
 
   const { data: produto, error } = await supabase
     .from("produtos")
-    .select("id, nome, descricao, preco, categoria, imagem_url, estoque_atual, ativo")
+    .select("id, nome, descricao, preco, categoria, imagem_url, imagens, estoque_atual, ativo, publicado")
     .eq("id", id)
     .eq("ativo", true)
+    .eq("publicado", true)
     .maybeSingle()
     .returns<Produto>();
 
@@ -50,25 +51,7 @@ export default async function ProdutoPage({
       </Link>
 
       <div className="grid gap-10 md:grid-cols-2 md:gap-16">
-        {produto.imagem_url ? (
-          // <img>, não next/image: o domínio do Storage do Supabase varia por
-          // projeto e ainda não está configurado em remotePatterns.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={produto.imagem_url}
-            alt={produto.nome}
-            className="aspect-[4/5] w-full rounded-lg bg-aurum-ice/[0.04] object-contain p-8"
-          />
-        ) : (
-          <div className="relative aspect-[4/5] w-full rounded-lg bg-aurum-emerald/30">
-            <Image
-              src="/logo-oficial.png"
-              alt=""
-              fill
-              className="object-contain p-16 opacity-10 mix-blend-screen"
-            />
-          </div>
-        )}
+        <ProductGallery imagens={produto.imagens} imagemLegada={produto.imagem_url} nome={produto.nome} />
 
         <div className="flex flex-col gap-5">
           {produto.categoria && <Badge className="w-fit">{produto.categoria}</Badge>}

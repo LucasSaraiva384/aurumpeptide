@@ -14,8 +14,10 @@ export type Produto = {
   preco: number;
   categoria: string | null;
   imagem_url: string | null;
+  imagens: string[];
   estoque_atual: number;
   ativo: boolean;
+  publicado: boolean;
 };
 
 export type Database = {

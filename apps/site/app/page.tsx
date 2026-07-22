@@ -26,8 +26,9 @@ async function getProdutosAtivos(): Promise<{ produtos: Produto[]; erro: string 
 
   const { data, error } = await supabase
     .from("produtos")
-    .select("id, nome, descricao, preco, categoria, imagem_url, estoque_atual, ativo")
+    .select("id, nome, descricao, preco, categoria, imagem_url, imagens, estoque_atual, ativo, publicado")
     .eq("ativo", true)
+    .eq("publicado", true)
     .order("nome");
 
   if (error) {

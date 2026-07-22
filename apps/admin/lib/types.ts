@@ -1,4 +1,4 @@
-// Espelha supabase/schema.sql — tipos usados pelo painel admin.
+// Espelha supabase/schema.sql + supabase/erp.sql — tipos usados pelo painel admin.
 //
 // `type`, não `interface`: o supabase-js/postgrest-js valida os tipos de
 // tabela contra `Record<string, unknown>` em posições de tipo condicional
@@ -13,9 +13,16 @@ export type Produto = {
   preco: number;
   categoria: string | null;
   imagem_url: string | null;
+  imagens: string[];
   estoque_atual: number;
   estoque_minimo: number;
   ativo: boolean;
+  // custo_medio: só escrito pelo trigger handle_new_compra (supabase/erp.sql),
+  // nunca pelo ProdutoForm — é o custo médio ponderado do estoque atual.
+  custo_medio: number;
+  // publicado/destaque: gates do módulo Marketing (não vivem no ProdutoForm).
+  publicado: boolean;
+  destaque: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -49,6 +56,10 @@ export type PedidoItem = {
   produto_id: string;
   quantidade: number;
   preco_unitario: number;
+  // custo_unitario: snapshot do custo_medio do produto no momento da venda,
+  // gravado pelo trigger BEFORE INSERT pedido_itens_before_insert_custo
+  // (supabase/erp.sql) — nunca informado manualmente pelo PedidoForm.
+  custo_unitario: number;
 };
 
 export type EstoqueMovimento = {
@@ -64,11 +75,47 @@ export type EstoqueMovimento = {
 export type Transacao = {
   id: string;
   data: string;
-  tipo: "receita" | "despesa";
+  // Ledger único: 'venda' (era 'receita') e 'compra'/'retirada'/'investimento'
+  // chegaram com o módulo financeiro/ERP (supabase/erp.sql).
+  tipo: "venda" | "compra" | "despesa" | "retirada" | "investimento";
   categoria: string | null;
   valor: number;
   pedido_id: string | null;
   descricao: string | null;
+  created_at: string;
+};
+
+export type Compra = {
+  id: string;
+  produto_id: string;
+  quantidade: number;
+  custo_unitario: number;
+  // valor_total: coluna gerada (generated always as stored) — nunca inserida
+  // manualmente, só lida.
+  valor_total: number;
+  data: string;
+  observacao: string | null;
+  created_at: string;
+};
+
+export type Retirada = {
+  id: string;
+  // Conta fixa dos dois sócios do negócio, não ligada ao usuário autenticado.
+  socio: "lucas" | "vinicius";
+  valor: number;
+  data: string;
+  observacao: string | null;
+  created_at: string;
+};
+
+export type MarketingMidia = {
+  id: string;
+  tipo: "banner_principal" | "destaque" | "promocional";
+  titulo: string | null;
+  imagem_url: string;
+  link: string | null;
+  ordem: number;
+  ativo: boolean;
   created_at: string;
 };
 
@@ -86,7 +133,19 @@ export type Database = {
         Insert: Partial<
           Pick<
             Produto,
-            "id" | "descricao" | "categoria" | "imagem_url" | "estoque_atual" | "estoque_minimo" | "ativo" | "created_at" | "updated_at"
+            | "id"
+            | "descricao"
+            | "categoria"
+            | "imagem_url"
+            | "imagens"
+            | "estoque_atual"
+            | "estoque_minimo"
+            | "ativo"
+            | "custo_medio"
+            | "publicado"
+            | "destaque"
+            | "created_at"
+            | "updated_at"
           >
         > &
           Pick<Produto, "nome" | "preco">;
@@ -116,7 +175,7 @@ export type Database = {
       };
       pedido_itens: {
         Row: PedidoItem;
-        Insert: Partial<Pick<PedidoItem, "id">> &
+        Insert: Partial<Pick<PedidoItem, "id" | "custo_unitario">> &
           Pick<PedidoItem, "pedido_id" | "produto_id" | "quantidade" | "preco_unitario">;
         Update: Partial<PedidoItem>;
         Relationships: [];
@@ -133,6 +192,28 @@ export type Database = {
         Insert: Partial<Pick<Transacao, "id" | "data" | "categoria" | "pedido_id" | "descricao" | "created_at">> &
           Pick<Transacao, "tipo" | "valor">;
         Update: Partial<Transacao>;
+        Relationships: [];
+      };
+      compras: {
+        Row: Compra;
+        // valor_total não entra no Insert: é coluna gerada pelo Postgres.
+        Insert: Partial<Pick<Compra, "id" | "data" | "observacao" | "created_at">> &
+          Pick<Compra, "produto_id" | "quantidade" | "custo_unitario">;
+        Update: Partial<Compra>;
+        Relationships: [];
+      };
+      retiradas: {
+        Row: Retirada;
+        Insert: Partial<Pick<Retirada, "id" | "data" | "observacao" | "created_at">> &
+          Pick<Retirada, "socio" | "valor">;
+        Update: Partial<Retirada>;
+        Relationships: [];
+      };
+      marketing_midias: {
+        Row: MarketingMidia;
+        Insert: Partial<Pick<MarketingMidia, "id" | "titulo" | "link" | "ordem" | "ativo" | "created_at">> &
+          Pick<MarketingMidia, "tipo" | "imagem_url">;
+        Update: Partial<MarketingMidia>;
         Relationships: [];
       };
     };

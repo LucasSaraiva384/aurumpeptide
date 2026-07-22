@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +28,29 @@ function hoje(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+const BADGE_VARIANT: Record<Transacao["tipo"], "default" | "secondary" | "destructive" | "outline"> = {
+  venda: "default",
+  investimento: "secondary",
+  compra: "outline",
+  despesa: "destructive",
+  retirada: "destructive",
+};
+
+const LABEL_TIPO: Record<Transacao["tipo"], string> = {
+  venda: "Venda",
+  compra: "Compra",
+  despesa: "Despesa",
+  retirada: "Retirada",
+  investimento: "Investimento",
+};
+
+/** Entra (+1)/sai (-1) do caixa, mesmo critério de lib/finance.ts. */
+function sinalCaixa(tipo: Transacao["tipo"]): number {
+  if (tipo === "venda" || tipo === "investimento") return 1;
+  if (tipo === "compra" || tipo === "despesa" || tipo === "retirada") return -1;
+  return 0;
+}
+
 export default async function TransacoesPage({
   searchParams,
 }: {
@@ -37,24 +61,46 @@ export default async function TransacoesPage({
   const dataFinal = ate || hoje();
 
   const supabase = await createClient();
-  const { data: transacoes, error } = await supabase
-    .from("transacoes")
-    .select("*")
-    .gte("data", dataInicial)
-    .lte("data", dataFinal)
-    .order("data", { ascending: false })
-    .returns<Transacao[]>();
+  const [{ data: transacoes, error }, { data: transacoesAteData }] = await Promise.all([
+    supabase
+      .from("transacoes")
+      .select("*")
+      .gte("data", dataInicial)
+      .lte("data", dataFinal)
+      .order("data", { ascending: false })
+      .order("created_at", { ascending: false })
+      .returns<Transacao[]>(),
+    // Todo o histórico até o fim do período: dá o saldo de caixa acumulado
+    // (posição de caixa da empresa na data final), não só o saldo do filtro.
+    supabase.from("transacoes").select("tipo, valor").lte("data", dataFinal).returns<Pick<Transacao, "tipo" | "valor">[]>(),
+  ]);
 
-  const receita = (transacoes ?? [])
-    .filter((t) => t.tipo === "receita")
-    .reduce((soma, t) => soma + Number(t.valor), 0);
-  const despesa = (transacoes ?? [])
-    .filter((t) => t.tipo === "despesa")
-    .reduce((soma, t) => soma + Number(t.valor), 0);
+  const somaPorTipo = (tipo: Transacao["tipo"]) =>
+    (transacoes ?? []).filter((t) => t.tipo === tipo).reduce((soma, t) => soma + Number(t.valor), 0);
+
+  const totais = {
+    venda: somaPorTipo("venda"),
+    compra: somaPorTipo("compra"),
+    despesa: somaPorTipo("despesa"),
+    retirada: somaPorTipo("retirada"),
+    investimento: somaPorTipo("investimento"),
+  };
+
+  const saldoCaixaAcumulado = (transacoesAteData ?? []).reduce(
+    (saldo, t) => saldo + sinalCaixa(t.tipo) * Number(t.valor),
+    0,
+  );
 
   return (
     <div>
-      <h2 className="font-heading mb-6 text-2xl text-foreground">Fluxo de caixa</h2>
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="font-heading text-2xl text-foreground">Fluxo de caixa</h2>
+        <Link href="/financeiro/despesas">
+          <Button variant="outline" size="sm">
+            + Nova despesa
+          </Button>
+        </Link>
+      </div>
 
       <form method="get" className="mb-6 flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1.5">
@@ -70,25 +116,41 @@ export default async function TransacoesPage({
         </Button>
       </form>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <Card>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Receita no período</p>
-            <p className="font-heading mt-1 text-xl text-foreground">{currencyFormatter.format(receita)}</p>
+            <p className="text-sm text-muted-foreground">Vendas</p>
+            <p className="font-heading mt-1 text-lg text-foreground">{currencyFormatter.format(totais.venda)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Despesa no período</p>
-            <p className="font-heading mt-1 text-xl text-foreground">{currencyFormatter.format(despesa)}</p>
+            <p className="text-sm text-muted-foreground">Compras</p>
+            <p className="font-heading mt-1 text-lg text-foreground">{currencyFormatter.format(totais.compra)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Saldo</p>
-            <p className="font-heading mt-1 text-xl text-foreground">
-              {currencyFormatter.format(receita - despesa)}
-            </p>
+            <p className="text-sm text-muted-foreground">Despesas</p>
+            <p className="font-heading mt-1 text-lg text-foreground">{currencyFormatter.format(totais.despesa)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Retiradas</p>
+            <p className="font-heading mt-1 text-lg text-foreground">{currencyFormatter.format(totais.retirada)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Investimento</p>
+            <p className="font-heading mt-1 text-lg text-foreground">{currencyFormatter.format(totais.investimento)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Saldo de caixa acumulado</p>
+            <p className="font-heading mt-1 text-lg text-foreground">{currencyFormatter.format(saldoCaixaAcumulado)}</p>
           </CardContent>
         </Card>
       </div>
@@ -111,12 +173,10 @@ export default async function TransacoesPage({
               <TableRow key={transacao.id}>
                 <TableCell>{dateFormatter.format(new Date(`${transacao.data}T00:00:00`))}</TableCell>
                 <TableCell>
-                  <Badge variant={transacao.tipo === "receita" ? "default" : "destructive"}>
-                    {transacao.tipo}
-                  </Badge>
+                  <Badge variant={BADGE_VARIANT[transacao.tipo]}>{LABEL_TIPO[transacao.tipo]}</Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{transacao.categoria ?? "—"}</TableCell>
-                <TableCell className="text-muted-foreground">{transacao.descricao ?? "—"}</TableCell>
+                <TableCell className="whitespace-normal text-muted-foreground">{transacao.descricao ?? "—"}</TableCell>
                 <TableCell>{currencyFormatter.format(transacao.valor)}</TableCell>
               </TableRow>
             ))}

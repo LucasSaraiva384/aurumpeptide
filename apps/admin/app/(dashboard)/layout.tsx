@@ -9,7 +9,13 @@ const NAV_ITEMS = [
   { href: "/produtos", label: "Produtos" },
   { href: "/pedidos", label: "Pedidos" },
   { href: "/clientes", label: "Clientes" },
-  { href: "/transacoes", label: "Transações" },
+  { href: "/compras", label: "Compras" },
+  { href: "/financeiro", label: "Financeiro" },
+  { href: "/estoque", label: "Estoque" },
+  { href: "/relatorios", label: "Relatórios" },
+  { href: "/marketing", label: "Marketing" },
+  { href: "/transacoes", label: "Fluxo de Caixa" },
+  { href: "/configuracoes", label: "Configurações" },
 ];
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
