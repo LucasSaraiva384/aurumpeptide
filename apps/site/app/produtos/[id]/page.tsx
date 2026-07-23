@@ -59,7 +59,9 @@ export default async function ProdutoPage({
             {produto.nome}
           </h1>
           {produto.descricao && (
-            <p className="leading-relaxed text-aurum-ice/80">{produto.descricao}</p>
+            <p className="whitespace-pre-line leading-relaxed text-aurum-ice/80">
+              {produto.descricao}
+            </p>
           )}
           <p className="font-heading text-2xl text-aurum-gold">
             {currencyFormatter.format(produto.preco)}
