@@ -30,13 +30,17 @@ export function ExcluirButton({
   id,
   titulo = "Confirmar exclusão",
   descricao,
-  mapearErro,
+  mensagensErro,
 }: {
   tabela: TabelaComId;
   id: string;
   titulo?: string;
   descricao: string;
-  mapearErro?: (mensagem: string, codigo?: string) => string;
+  // Mapa código de erro Postgres -> mensagem amigável. Um objeto simples
+  // (em vez de uma função) porque este componente é "use client" e recebe
+  // props de Server Components — funções não podem atravessar essa
+  // fronteira, só valores serializáveis.
+  mensagensErro?: Record<string, string>;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -54,7 +58,7 @@ export function ExcluirButton({
     setExcluindo(false);
 
     if (error) {
-      const mensagem = mapearErro?.(error.message, error.code) ?? error.message;
+      const mensagem = (error.code && mensagensErro?.[error.code]) ?? error.message;
       toast.error("Erro ao excluir", { description: mensagem });
       return;
     }

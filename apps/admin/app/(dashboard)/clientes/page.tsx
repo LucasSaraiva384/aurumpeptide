@@ -17,12 +17,9 @@ import type { Cliente } from "@/lib/types";
 // Violação de FK (23503): pedidos.cliente_id -> clientes(id) sem ON DELETE
 // definido de propósito — um cliente com histórico de pedidos não pode ser
 // apagado silenciosamente. Troca a mensagem crua do Postgres por uma clara.
-function mapearErroExclusaoCliente(mensagem: string, codigo?: string) {
-  if (codigo === "23503") {
-    return "Este cliente tem pedidos registrados e não pode ser excluído.";
-  }
-  return mensagem;
-}
+const MENSAGENS_ERRO_EXCLUSAO_CLIENTE = {
+  "23503": "Este cliente tem pedidos registrados e não pode ser excluído.",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -108,7 +105,7 @@ export default async function ClientesPage({
                       id={cliente.id}
                       titulo="Excluir cliente?"
                       descricao={`Excluir "${cliente.nome}"? Esta ação não pode ser desfeita.`}
-                      mapearErro={mapearErroExclusaoCliente}
+                      mensagensErro={MENSAGENS_ERRO_EXCLUSAO_CLIENTE}
                     />
                   </div>
                 </TableCell>
