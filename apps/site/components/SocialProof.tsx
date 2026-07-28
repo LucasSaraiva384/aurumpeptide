@@ -16,8 +16,8 @@ export function SocialProof() {
           </h2>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <ScrollReveal>
+        <div className="flex justify-center">
+          <ScrollReveal className="w-full max-w-md">
             <Card className="flex h-full flex-col items-center justify-center gap-4 text-center">
               <p className="text-sm uppercase tracking-[0.25em] text-aurum-gold">Instagram</p>
               <p className="max-w-sm text-sm leading-relaxed text-aurum-ice/75">
@@ -31,21 +31,6 @@ export function SocialProof() {
               >
                 @aurumpeptide
               </ButtonLink>
-            </Card>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.1}>
-            {/*
-              Depoimentos reais ainda não foram fornecidos pelo cliente — em vez
-              de fabricar citações fictícias, este bloco assume um estado
-              "em breve" explícito até haver conteúdo real para publicar.
-            */}
-            <Card className="flex h-full flex-col items-center justify-center gap-3 text-center">
-              <p className="text-sm uppercase tracking-[0.25em] text-aurum-gold">Depoimentos</p>
-              <p className="max-w-sm text-sm leading-relaxed text-aurum-ice/60">
-                Em breve, experiências reais de clientes Aurum Peptide serão apresentadas
-                nesta seção.
-              </p>
             </Card>
           </ScrollReveal>
         </div>

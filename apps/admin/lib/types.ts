@@ -81,6 +81,9 @@ export type Transacao = {
   categoria: string | null;
   valor: number;
   pedido_id: string | null;
+  // compra_id: vínculo com a compra que gerou esta transação (supabase/edicoes.sql)
+  // — permite localizar e sincronizar a transação certa quando uma compra é editada.
+  compra_id: string | null;
   descricao: string | null;
   created_at: string;
 };
@@ -118,6 +121,8 @@ export type MarketingMidia = {
   ativo: boolean;
   created_at: string;
 };
+
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 // Tipagem do client Supabase (createServerClient<Database>/createBrowserClient<Database>).
 // Só Row/Insert são usados no scaffold — Update fica igual a Insert em Partial
@@ -189,7 +194,9 @@ export type Database = {
       };
       transacoes: {
         Row: Transacao;
-        Insert: Partial<Pick<Transacao, "id" | "data" | "categoria" | "pedido_id" | "descricao" | "created_at">> &
+        Insert: Partial<
+          Pick<Transacao, "id" | "data" | "categoria" | "pedido_id" | "compra_id" | "descricao" | "created_at">
+        > &
           Pick<Transacao, "tipo" | "valor">;
         Update: Partial<Transacao>;
         Relationships: [];
@@ -218,6 +225,34 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    // Funções RPC de supabase/edicoes.sql — edição direta de pedido/compra
+    // que recalcula estoque/custo médio/financeiro/estatísticas do cliente
+    // dentro de uma transação no Postgres em vez de vários statements
+    // soltos no client.
+    Functions: {
+      atualizar_pedido: {
+        Args: {
+          p_pedido_id: string;
+          p_cliente_id: string | null;
+          p_forma_pagamento: string | null;
+          p_observacao: string | null;
+          // Array de { produtoId, quantidade, precoUnitario } — mesmo
+          // formato do estado `itens` do PedidoForm.
+          p_itens: Json;
+        };
+        Returns: undefined;
+      };
+      atualizar_compra: {
+        Args: {
+          p_compra_id: string;
+          p_produto_id: string;
+          p_quantidade: number;
+          p_custo_unitario: number;
+          p_data: string;
+          p_observacao: string | null;
+        };
+        Returns: undefined;
+      };
+    };
   };
 };

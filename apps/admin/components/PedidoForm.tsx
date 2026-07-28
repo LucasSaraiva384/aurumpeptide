@@ -18,6 +18,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 import { currencyFormatter } from "@/lib/format";
+import type { Pedido, PedidoItem as PedidoItemRow } from "@/lib/types";
 
 interface ClienteOpcao {
   id: string;
@@ -44,20 +45,35 @@ function novoItem(produtos: ProdutoOpcao[]): ItemPedido {
   return { produtoId: primeiro?.id ?? "", quantidade: 1, precoUnitario: primeiro?.preco ?? 0 };
 }
 
-export function PedidoForm() {
+export function PedidoForm({
+  pedido,
+  itensIniciais,
+}: {
+  pedido?: Pedido;
+  itensIniciais?: PedidoItemRow[];
+}) {
   const router = useRouter();
+  const isEdicao = Boolean(pedido);
   const [clientes, setClientes] = useState<ClienteOpcao[]>([]);
   const [produtos, setProdutos] = useState<ProdutoOpcao[]>([]);
 
   const [clienteNovo, setClienteNovo] = useState(false);
-  const [clienteId, setClienteId] = useState("");
+  const [clienteId, setClienteId] = useState(pedido?.cliente_id ?? "");
   const [nomeClienteNovo, setNomeClienteNovo] = useState("");
   const [whatsappClienteNovo, setWhatsappClienteNovo] = useState("");
   const [cidadeClienteNovo, setCidadeClienteNovo] = useState("");
 
-  const [itens, setItens] = useState<ItemPedido[]>([]);
-  const [formaPagamento, setFormaPagamento] = useState(FORMAS_PAGAMENTO[0]);
-  const [observacao, setObservacao] = useState("");
+  const [itens, setItens] = useState<ItemPedido[]>(
+    itensIniciais?.map((item) => ({
+      produtoId: item.produto_id,
+      quantidade: item.quantidade,
+      precoUnitario: item.preco_unitario,
+    })) ?? [],
+  );
+  const [formaPagamento, setFormaPagamento] = useState<string>(
+    pedido?.forma_pagamento ?? FORMAS_PAGAMENTO[0] ?? "",
+  );
+  const [observacao, setObservacao] = useState<string>(pedido?.observacao ?? "");
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -70,16 +86,22 @@ export function PedidoForm() {
       .order("nome")
       .then(({ data }) => setClientes(data ?? []));
 
-    supabase
-      .from("produtos")
-      .select("id, nome, preco, estoque_atual")
-      .eq("ativo", true)
-      .order("nome")
-      .then(({ data }) => {
-        const lista = data ?? [];
-        setProdutos(lista);
+    // Na edição, um item pode referenciar um produto que hoje está
+    // inativo/descontinuado — buscar todos os produtos garante que ele
+    // continue aparecendo no select em vez de sumir da lista.
+    let query = supabase.from("produtos").select("id, nome, preco, estoque_atual");
+    if (!isEdicao) {
+      query = query.eq("ativo", true);
+    }
+
+    query.order("nome").then(({ data }) => {
+      const lista = data ?? [];
+      setProdutos(lista);
+      if (!isEdicao) {
         setItens([novoItem(lista)]);
-      });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const valorTotal = itens.reduce((soma, item) => soma + item.quantidade * item.precoUnitario, 0);
@@ -143,7 +165,38 @@ export function PedidoForm() {
       clienteIdFinal = novoCliente.id;
     }
 
-    const { data: pedido, error: erroPedido } = await supabase
+    if (isEdicao) {
+      // RPC transacional (supabase/edicoes.sql): apaga os itens antigos,
+      // atualiza o pedido, insere os itens novos e recalcula
+      // estoque/financeiro/estatísticas do cliente — tudo dentro de uma
+      // única transação no Postgres, em vez de statements soltos no client.
+      const { error: erroRpc } = await supabase.rpc("atualizar_pedido", {
+        p_pedido_id: pedido!.id,
+        p_cliente_id: clienteIdFinal,
+        p_forma_pagamento: formaPagamento,
+        p_observacao: observacao || null,
+        p_itens: itens.map((item) => ({
+          produtoId: item.produtoId,
+          quantidade: item.quantidade,
+          precoUnitario: item.precoUnitario,
+        })),
+      });
+
+      setSalvando(false);
+
+      if (erroRpc) {
+        setErro(erroRpc.message);
+        toast.error("Erro ao atualizar pedido", { description: erroRpc.message });
+        return;
+      }
+
+      toast.success("Pedido atualizado.");
+      router.push("/pedidos");
+      router.refresh();
+      return;
+    }
+
+    const { data: pedidoCriado, error: erroPedido } = await supabase
       .from("pedidos")
       .insert({
         cliente_id: clienteIdFinal,
@@ -155,7 +208,7 @@ export function PedidoForm() {
       .single()
       .returns<{ id: string }>();
 
-    if (erroPedido || !pedido) {
+    if (erroPedido || !pedidoCriado) {
       const mensagem = erroPedido?.message ?? "Erro ao registrar pedido.";
       setErro(mensagem);
       toast.error("Erro ao registrar pedido", { description: mensagem });
@@ -169,7 +222,7 @@ export function PedidoForm() {
     // função RPC no Postgres eliminaria essa janela.
     const { error: erroItens } = await supabase.from("pedido_itens").insert(
       itens.map((item) => ({
-        pedido_id: pedido.id,
+        pedido_id: pedidoCriado.id,
         produto_id: item.produtoId,
         quantidade: item.quantidade,
         preco_unitario: item.precoUnitario,
@@ -324,7 +377,7 @@ export function PedidoForm() {
           {erro && <p className="text-sm text-destructive">{erro}</p>}
 
           <Button type="submit" disabled={salvando} className="w-fit">
-            {salvando ? "Registrando..." : "Registrar pedido"}
+            {salvando ? "Salvando..." : isEdicao ? "Salvar alterações" : "Registrar pedido"}
           </Button>
         </form>
       </CardContent>

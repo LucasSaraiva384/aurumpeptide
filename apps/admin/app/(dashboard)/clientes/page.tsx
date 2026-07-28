@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,7 +39,12 @@ export default async function ClientesPage({
 
   return (
     <div>
-      <h2 className="font-heading mb-6 text-2xl text-foreground">Clientes</h2>
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="font-heading text-2xl text-foreground">Clientes</h2>
+        <Link href="/clientes/novo">
+          <Button>Novo cliente</Button>
+        </Link>
+      </div>
 
       <form method="get" className="mb-6 flex gap-2">
         <Input
@@ -64,6 +70,7 @@ export default async function ClientesPage({
               <TableHead>Cidade</TableHead>
               <TableHead>Última compra</TableHead>
               <TableHead>Total gasto</TableHead>
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -78,11 +85,20 @@ export default async function ClientesPage({
                     : "—"}
                 </TableCell>
                 <TableCell>{currencyFormatter.format(cliente.valor_total_gasto)}</TableCell>
+                <TableCell>
+                  <div className="flex justify-end">
+                    <Link href={`/clientes/${cliente.id}`}>
+                      <Button variant="outline" size="sm">
+                        Editar
+                      </Button>
+                    </Link>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
             {(clientes ?? []).length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
                   Nenhum cliente encontrado.
                 </TableCell>
               </TableRow>

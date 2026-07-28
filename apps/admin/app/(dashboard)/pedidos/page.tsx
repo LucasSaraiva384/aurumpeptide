@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -49,6 +51,7 @@ export default async function PedidosPage() {
                 <TableHead>Cliente</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Pagamento</TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -60,11 +63,20 @@ export default async function PedidosPage() {
                   </TableCell>
                   <TableCell>{currencyFormatter.format(pedido.valor_total)}</TableCell>
                   <TableCell className="text-muted-foreground">{pedido.forma_pagamento ?? "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex justify-end">
+                      <Link href={`/pedidos/${pedido.id}`}>
+                        <Button variant="outline" size="sm">
+                          Editar
+                        </Button>
+                      </Link>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
               {(pedidos ?? []).length === 0 && !error && (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
                     Nenhum pedido registrado ainda.
                   </TableCell>
                 </TableRow>

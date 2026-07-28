@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -49,6 +51,7 @@ export default async function ComprasPage() {
                 <TableHead>Quantidade</TableHead>
                 <TableHead>Custo unitário</TableHead>
                 <TableHead>Total</TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -61,11 +64,20 @@ export default async function ComprasPage() {
                   <TableCell>{compra.quantidade}</TableCell>
                   <TableCell>{currencyFormatter.format(compra.custo_unitario)}</TableCell>
                   <TableCell>{currencyFormatter.format(compra.valor_total)}</TableCell>
+                  <TableCell>
+                    <div className="flex justify-end">
+                      <Link href={`/compras/${compra.id}`}>
+                        <Button variant="outline" size="sm">
+                          Editar
+                        </Button>
+                      </Link>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
               {(compras ?? []).length === 0 && !error && (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
                     Nenhuma compra registrada ainda.
                   </TableCell>
                 </TableRow>

@@ -17,6 +17,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 import { currencyFormatter } from "@/lib/format";
+import type { Compra } from "@/lib/types";
 
 type ProdutoOpcao = {
   id: string;
@@ -25,14 +26,15 @@ type ProdutoOpcao = {
   custo_medio: number;
 };
 
-export function CompraForm() {
+export function CompraForm({ compra }: { compra?: Compra }) {
   const router = useRouter();
+  const isEdicao = Boolean(compra);
   const [produtos, setProdutos] = useState<ProdutoOpcao[]>([]);
-  const [produtoId, setProdutoId] = useState("");
-  const [quantidade, setQuantidade] = useState("1");
-  const [custoUnitario, setCustoUnitario] = useState("");
-  const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
-  const [observacao, setObservacao] = useState("");
+  const [produtoId, setProdutoId] = useState(compra?.produto_id ?? "");
+  const [quantidade, setQuantidade] = useState(compra ? String(compra.quantidade) : "1");
+  const [custoUnitario, setCustoUnitario] = useState(compra ? String(compra.custo_unitario) : "");
+  const [data, setData] = useState(() => compra?.data ?? new Date().toISOString().slice(0, 10));
+  const [observacao, setObservacao] = useState(compra?.observacao ?? "");
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -66,6 +68,33 @@ export function CompraForm() {
 
     setSalvando(true);
     const supabase = createClient();
+
+    if (isEdicao) {
+      // RPC transacional (supabase/edicoes.sql): atualiza a compra e
+      // sincroniza a transação vinculada — o trigger de UPDATE em compras
+      // recalcula estoque/custo médio do produto do zero.
+      const { error: erroRpc } = await supabase.rpc("atualizar_compra", {
+        p_compra_id: compra!.id,
+        p_produto_id: produtoId,
+        p_quantidade: Number(quantidade),
+        p_custo_unitario: Number(custoUnitario),
+        p_data: data,
+        p_observacao: observacao || null,
+      });
+
+      setSalvando(false);
+
+      if (erroRpc) {
+        setErro(erroRpc.message);
+        toast.error("Erro ao atualizar compra", { description: erroRpc.message });
+        return;
+      }
+
+      toast.success("Compra atualizada — estoque e custo médio recalculados.");
+      router.push("/compras");
+      router.refresh();
+      return;
+    }
 
     const { error } = await supabase.from("compras").insert({
       produto_id: produtoId,
@@ -170,7 +199,7 @@ export function CompraForm() {
           {erro && <p className="text-sm text-destructive">{erro}</p>}
 
           <Button type="submit" disabled={salvando} className="w-fit">
-            {salvando ? "Registrando..." : "Registrar compra"}
+            {salvando ? "Salvando..." : isEdicao ? "Salvar alterações" : "Registrar compra"}
           </Button>
         </form>
       </CardContent>
