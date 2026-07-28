@@ -11,6 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { currencyFormatter, dateFormatter } from "@/lib/format";
 import { CompraForm } from "@/components/CompraForm";
+import { ExcluirButton } from "@/components/ExcluirButton";
 import type { Compra, Produto } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -65,12 +66,22 @@ export default async function ComprasPage() {
                   <TableCell>{currencyFormatter.format(compra.custo_unitario)}</TableCell>
                   <TableCell>{currencyFormatter.format(compra.valor_total)}</TableCell>
                   <TableCell>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-3">
                       <Link href={`/compras/${compra.id}`}>
                         <Button variant="outline" size="sm">
                           Editar
                         </Button>
                       </Link>
+                      <ExcluirButton
+                        tabela="compras"
+                        id={compra.id}
+                        titulo="Excluir compra?"
+                        descricao={`Isso vai remover ${compra.quantidade} un. de ${
+                          nomeProdutoPorId.get(compra.produto_id) ?? "produto"
+                        } do estoque (recalculando o custo médio) e ${currencyFormatter.format(
+                          compra.valor_total,
+                        )} do financeiro. Esta ação não pode ser desfeita.`}
+                      />
                     </div>
                   </TableCell>
                 </TableRow>

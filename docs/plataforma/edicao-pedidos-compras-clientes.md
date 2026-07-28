@@ -1,6 +1,6 @@
-# Edição de pedidos, compras e clientes — painel admin
+# Edição e exclusão de pedidos, compras e clientes — painel admin
 
-> Decisão registrada em 2026-07-28. Complementa `docs/plataforma/arquitetura.md` (visão geral da plataforma) e `supabase/erp.sql` (módulo financeiro/ERP que introduziu `compras`, `retiradas` e o ledger único `transacoes`).
+> Decisão registrada em 2026-07-28. Complementa `docs/plataforma/arquitetura.md` (visão geral da plataforma) e `supabase/erp.sql` (módulo financeiro/ERP que introduziu `compras`, `retiradas` e o ledger único `transacoes`). A seção "Exclusão" abaixo foi adicionada na mesma data, como segunda leva sobre o mesmo arquivo `supabase/edicoes.sql`.
 
 ## Problema
 
@@ -60,7 +60,44 @@ Um pedido pode ter N `pedido_itens`. A forma mais simples e correta de editar é
 - `pnpm --filter admin lint` e `pnpm --filter admin build` passam limpos (TypeScript incluído no build).
 - **Não foi possível testar contra o Supabase real deste ambiente**: `apps/admin/.env.local` só tem a chave `anon` (sem `SUPABASE_SERVICE_ROLE_KEY`, connection string ou Supabase CLI disponíveis), e `supabase/edicoes.sql` — como todo o resto do schema — é aplicado manualmente pelo usuário no SQL Editor do Supabase Dashboard. A revisão foi feita por leitura cuidadosa do SQL (incluindo o traço manual do cenário "compra → venda → compra" para validar que o recompute intercalado reproduz a mesma média ponderada que os triggers incrementais produziriam).
 
-## Pendências / próximos passos
+## Pendências / próximos passos (edição)
 
-- Depois de rodar `supabase/edicoes.sql` no SQL Editor, testar manualmente: editar um pedido (trocando item/quantidade/cliente), editar uma compra (trocando produto/quantidade/custo) e editar um cliente — e conferir via query direta que `produtos.estoque_atual`/`custo_medio`, `transacoes.valor` e `clientes.valor_total_gasto`/`primeira_compra_em`/`ultima_compra_em` ficaram corretos.
-- Excluir pedidos/compras (não só editar) não foi pedido nesta leva e não tem UI — mas o trigger `compras_after_update_delete` já cobre `DELETE` em `compras` caso uma tela de exclusão seja adicionada depois.
+- ✅ Testado pelo usuário no Supabase real (aplicou `supabase/edicoes.sql` no SQL Editor e confirmou editar pedido/compra/cliente corretamente) — ver seção "Exclusão" abaixo para o que veio depois.
+
+---
+
+## Exclusão de pedidos, compras e clientes
+
+> Adicionado em 2026-07-28, depois de editar já estar validado em produção. Mesmo arquivo aditivo `supabase/edicoes.sql` (seção nova no final do arquivo, nada do que já existia foi alterado além de duas constraints de FK — ver abaixo).
+
+### Problema
+
+Editar já estava resolvido; faltava apagar um pedido/compra/cliente e reverter estoque/custo médio/financeiro do mesmo jeito que a edição já faz — sem manter estorno visível na UI (mesmo modelo de "edição direta" já adotado).
+
+### Backend — novidades em `supabase/edicoes.sql`
+
+Boa parte da engenharia pesada já existia da leva de edição e só precisava ser destravada ou complementada:
+
+- **Compras**: o trigger `compras_after_update_delete` (`AFTER UPDATE OR DELETE ON compras`, já criado na leva de edição) **já cobria o `DELETE`** — `handle_compra_alterada` já chama `recompute_produto_estoque_custo(old.produto_id)` também para `tg_op = 'DELETE'`. Não precisou de nenhuma trigger nova. O que faltava: `transacoes.compra_id` tinha sido criada como `references compras(id)` puro (sem `ON DELETE`), então apagar uma compra falhava com violação de FK por causa da transação vinculada. Corrigido com `ALTER TABLE transacoes DROP CONSTRAINT transacoes_compra_id_fkey` + `ADD CONSTRAINT ... ON DELETE CASCADE` — apagar a compra agora remove também a transação de compra correspondente do ledger (mesmo modelo de "sem relançamento visível").
+- **Pedidos**: `pedido_itens.pedido_id` já tinha `ON DELETE CASCADE` desde `supabase/schema.sql` original, e a trigger `pedido_itens_before_delete` (criada na leva de edição) já reverte o estoque de cada item apagado — então apagar um pedido **já revertia o estoque automaticamente via cascade**, sem precisar de nada novo ali. Faltavam duas peças: (1) a mesma correção de FK em `transacoes.pedido_id` (mesmo problema/mesma solução — `ON DELETE CASCADE`); (2) uma trigger nova `pedidos_after_delete` (`AFTER DELETE ON pedidos`) chamando `recompute_cliente_estatisticas(old.cliente_id)`, já que só a RPC `atualizar_pedido` recalculava as estatísticas do cliente — apagar o pedido inteiro não acionava nada disso antes.
+- **Clientes**: nenhuma mudança de schema. `pedidos.cliente_id references clientes(id)` continua **sem** `ON DELETE` — de propósito. Decisão de design: um cliente com pedidos vinculados **não pode** ser apagado, silenciosamente ou não, porque isso apagaria rastro de vendas reais do negócio. A violação de FK (`23503`) é o guarda-corpo correto aqui; não foi "corrigida" porque não é um bug.
+
+Nenhum trigger de INSERT/UPDATE existente (da leva de edição ou de `erp.sql`/`schema.sql`) foi tocado — só as duas constraints de FK citadas e uma trigger nova (`pedidos_after_delete`).
+
+### Frontend — `apps/admin`
+
+- **`components/ui/alert-dialog.tsx`** (novo, via `npx shadcn add alert-dialog`): o admin já tinha `Dialog` (usado por `DeleteButton.tsx`, exclusivo de produtos), mas não `AlertDialog`. Instalado pelo fluxo padrão do shadcn, sem tocar em `DeleteButton`/produtos.
+- **`components/ExcluirButton.tsx`** (novo): botão de exclusão genérico com confirmação via `AlertDialog`, usado por pedidos/compras/clientes (produtos continua usando `DeleteButton`, que já resolvia o mesmo problema com `Dialog` — não foi migrado para não arriscar regressão numa tela que não fazia parte deste pedido). Aceita `descricao` (texto rico explicando o que será revertido) e `mapearErro` opcional (usado só por clientes, para trocar a violação de FK crua por "Este cliente tem pedidos registrados e não pode ser excluído."). Importante: `AlertDialogAction` do Radix fecha o diálogo sozinho ao clicar — o handler chama `event.preventDefault()` como a primeira linha (antes de qualquer `await`) para poder manter o diálogo aberto se o delete falhar, fechando manualmente (`setOpen(false)`) só no sucesso.
+- **Listagens**: `pedidos/page.tsx`, `compras/page.tsx` e `clientes/page.tsx` ganharam o botão "Excluir" ao lado de "Editar", cada um com uma descrição de preview específica:
+  - Pedido: menciona cliente, valor total, e que os itens vendidos voltam ao estoque e a transação vinculada some do financeiro.
+  - Compra: menciona quantidade + nome do produto (que volta a sair do estoque, recalculando o custo médio) e o valor removido do financeiro.
+  - Cliente: confirmação simples (não há reversão de estoque/financeiro); se o delete falhar por FK, o toast de erro mostra a mensagem amigável em vez do erro cru do Postgres.
+
+### Verificação feita
+
+- `pnpm --filter admin build` e `pnpm --filter admin lint` passam limpos.
+- Mesma limitação da leva de edição: sem `SUPABASE_SERVICE_ROLE_KEY`/connection string/CLI neste ambiente, não foi possível aplicar `supabase/edicoes.sql` nem testar contra o Supabase real. Revisão feita por leitura cuidadosa do SQL, incluindo confirmação de que `AlertDialogAction` é implementado sobre `DialogPrimitive.Close` do Radix (`node_modules/@radix-ui/react-dialog`) e que `event.preventDefault()` síncrono de fato bloqueia o auto-close via `composeEventHandlers`.
+
+### Pendências / próximos passos (exclusão)
+
+- Depois de rodar a seção nova de `supabase/edicoes.sql` no SQL Editor (o arquivo é cumulativo — rodar o arquivo inteiro de novo é seguro, todos os `create`/`alter` novos usam `create or replace`/`if not exists`/`if exists` onde relevante, exceto as duas `create function`/`create trigger` novas desta leva, que falhariam num segundo `run` se o arquivo inteiro já tivesse sido aplicado — nesse caso, rodar só a seção "Exclusão" a partir do comentário `-- Exclusão de pedidos, compras e clientes`), testar manualmente: apagar uma compra e conferir que estoque/custo médio do produto recalculam e a transação some do financeiro; apagar um pedido e conferir que o estoque volta, a transação de venda some e as estatísticas do cliente recalculam; tentar apagar um cliente com pedidos e confirmar a mensagem amigável (depois apagar um cliente sem pedidos e confirmar que funciona).

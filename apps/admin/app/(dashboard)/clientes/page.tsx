@@ -11,7 +11,18 @@ import {
 } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
 import { currencyFormatter, dateFormatter } from "@/lib/format";
+import { ExcluirButton } from "@/components/ExcluirButton";
 import type { Cliente } from "@/lib/types";
+
+// Violação de FK (23503): pedidos.cliente_id -> clientes(id) sem ON DELETE
+// definido de propósito — um cliente com histórico de pedidos não pode ser
+// apagado silenciosamente. Troca a mensagem crua do Postgres por uma clara.
+function mapearErroExclusaoCliente(mensagem: string, codigo?: string) {
+  if (codigo === "23503") {
+    return "Este cliente tem pedidos registrados e não pode ser excluído.";
+  }
+  return mensagem;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -86,12 +97,19 @@ export default async function ClientesPage({
                 </TableCell>
                 <TableCell>{currencyFormatter.format(cliente.valor_total_gasto)}</TableCell>
                 <TableCell>
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-3">
                     <Link href={`/clientes/${cliente.id}`}>
                       <Button variant="outline" size="sm">
                         Editar
                       </Button>
                     </Link>
+                    <ExcluirButton
+                      tabela="clientes"
+                      id={cliente.id}
+                      titulo="Excluir cliente?"
+                      descricao={`Excluir "${cliente.nome}"? Esta ação não pode ser desfeita.`}
+                      mapearErro={mapearErroExclusaoCliente}
+                    />
                   </div>
                 </TableCell>
               </TableRow>

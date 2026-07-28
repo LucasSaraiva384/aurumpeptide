@@ -11,6 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { currencyFormatter, dateFormatter } from "@/lib/format";
 import { PedidoForm } from "@/components/PedidoForm";
+import { ExcluirButton } from "@/components/ExcluirButton";
 import type { Pedido, Cliente } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -64,12 +65,22 @@ export default async function PedidosPage() {
                   <TableCell>{currencyFormatter.format(pedido.valor_total)}</TableCell>
                   <TableCell className="text-muted-foreground">{pedido.forma_pagamento ?? "—"}</TableCell>
                   <TableCell>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-3">
                       <Link href={`/pedidos/${pedido.id}`}>
                         <Button variant="outline" size="sm">
                           Editar
                         </Button>
                       </Link>
+                      <ExcluirButton
+                        tabela="pedidos"
+                        id={pedido.id}
+                        titulo="Excluir pedido?"
+                        descricao={`Isso vai excluir o pedido de ${
+                          (pedido.cliente_id && nomeClientePorId.get(pedido.cliente_id)) ?? "cliente não identificado"
+                        } no valor de ${currencyFormatter.format(
+                          pedido.valor_total,
+                        )}, devolver os itens vendidos ao estoque e remover a transação vinculada do financeiro. Esta ação não pode ser desfeita.`}
+                      />
                     </div>
                   </TableCell>
                 </TableRow>

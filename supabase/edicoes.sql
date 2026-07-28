@@ -309,3 +309,60 @@ grant execute on function recompute_produto_estoque_custo(uuid) to authenticated
 grant execute on function recompute_cliente_estatisticas(uuid) to authenticated;
 grant execute on function atualizar_pedido(uuid, uuid, text, text, jsonb) to authenticated;
 grant execute on function atualizar_compra(uuid, uuid, integer, numeric, date, text) to authenticated;
+
+-- =========================================================
+-- Exclusão de pedidos, compras e clientes (2026-07-28, complementa a seção
+-- de edição acima). Ver docs/plataforma/edicao-pedidos-compras-clientes.md
+-- ("Exclusão") para o desenho completo.
+--
+-- compras: o trigger compras_after_update_delete (já criado acima, AFTER
+-- UPDATE OR DELETE ON compras) já cobre o DELETE — apagar uma compra já
+-- recalcula estoque/custo médio via recompute_produto_estoque_custo. Só
+-- faltava o vínculo com a transação não travar a exclusão por FK.
+--
+-- pedidos: pedido_itens já tem ON DELETE CASCADE (supabase/schema.sql) e a
+-- trigger pedido_itens_before_delete (criada acima) já reverte o estoque de
+-- cada item apagado — então apagar um pedido já reverte o estoque
+-- automaticamente via cascade, item a item. Faltava (1) o mesmo
+-- destravamento de FK na transação vinculada e (2) recalcular as
+-- estatísticas do cliente, que hoje só a RPC de edição fazia.
+--
+-- clientes: nenhuma mudança de schema aqui — apagar um cliente com pedidos
+-- vinculados deve continuar falhando por FK (pedidos.cliente_id references
+-- clientes(id), sem ON DELETE definido). Isso é proposital: um cliente com
+-- histórico de compras não pode ser apagado silenciosamente, perderia
+-- rastro de vendas reais. O frontend só precisa capturar esse erro (código
+-- 23503 / foreign_key_violation) e mostrar uma mensagem amigável em vez do
+-- erro cru do Postgres.
+-- =========================================================
+
+-- transacoes.compra_id: sem isso, apagar uma compra falha com violação de
+-- FK por causa da transação vinculada. Com ON DELETE CASCADE, apagar a
+-- compra também remove a transação de compra correspondente do ledger —
+-- coerente com o modelo de "edição/exclusão direta" já adotado (sem
+-- relançamento nem estorno visível na UI).
+alter table transacoes drop constraint if exists transacoes_compra_id_fkey;
+alter table transacoes add constraint transacoes_compra_id_fkey
+  foreign key (compra_id) references compras(id) on delete cascade;
+
+-- transacoes.pedido_id: mesma lógica, para permitir apagar um pedido sem
+-- travar na transação de venda vinculada.
+alter table transacoes drop constraint if exists transacoes_pedido_id_fkey;
+alter table transacoes add constraint transacoes_pedido_id_fkey
+  foreign key (pedido_id) references pedidos(id) on delete cascade;
+
+-- Trigger novo: ao apagar um pedido inteiro, recalcula as estatísticas do
+-- cliente — nada fazia isso até agora fora da edição (RPC atualizar_pedido).
+-- pedido_itens e a transação de venda já saem sozinhos via cascade acima; o
+-- estorno de estoque de cada item já é feito por pedido_itens_before_delete
+-- (criada na seção de edição, acionada pelo próprio cascade).
+create function handle_pedido_deletado() returns trigger as $$
+begin
+  perform recompute_cliente_estatisticas(old.cliente_id);
+  return old;
+end;
+$$ language plpgsql;
+
+create trigger pedidos_after_delete
+  after delete on pedidos
+  for each row execute function handle_pedido_deletado();
