@@ -23,6 +23,15 @@ export type Produto = {
   // publicado/destaque: gates do módulo Marketing (não vivem no ProdutoForm).
   publicado: boolean;
   destaque: boolean;
+  // seo_*: campos opcionais de SEO técnico (supabase/seo.sql), editáveis na
+  // seção "SEO" do ProdutoForm. Em branco = geração automática no site
+  // (apps/site/lib/seo.ts) a partir de nome/descricao/categoria.
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_slug: string | null;
+  seo_canonical: string | null;
+  seo_og_image: string | null;
+  seo_robots: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -149,6 +158,12 @@ export type Database = {
             | "custo_medio"
             | "publicado"
             | "destaque"
+            | "seo_title"
+            | "seo_description"
+            | "seo_slug"
+            | "seo_canonical"
+            | "seo_og_image"
+            | "seo_robots"
             | "created_at"
             | "updated_at"
           >

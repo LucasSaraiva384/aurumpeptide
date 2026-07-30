@@ -50,15 +50,16 @@ export function ProductGallery({
         className="flex snap-x snap-mandatory overflow-x-auto rounded-lg bg-aurum-ice/[0.04] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {fotos.map((url, index) => (
-          // <img>, não next/image: o domínio do Storage do Supabase varia por
-          // projeto e ainda não está configurado em remotePatterns.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={url}
-            src={url}
-            alt={`${nome} — foto ${index + 1}`}
-            className="aspect-[4/5] w-full flex-none snap-center object-contain p-8"
-          />
+          <div key={url} className="relative aspect-[4/5] w-full flex-none snap-center">
+            <Image
+              src={url}
+              alt={`${nome} — foto ${index + 1}`}
+              fill
+              sizes="(min-width: 768px) 50vw, 100vw"
+              priority={index === 0}
+              className="object-contain p-8"
+            />
+          </div>
         ))}
       </div>
 

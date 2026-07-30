@@ -4,9 +4,10 @@ import { Card, ButtonLink } from "@aurum/ui";
 import type { Produto } from "@/lib/types";
 import { currencyFormatter } from "@/lib/format";
 import { buildWhatsappLink } from "@/lib/whatsapp";
+import { buildProductSlug } from "@/lib/seo";
 
 export function ProductCard({ produto }: { produto: Produto }) {
-  const detalheHref = `/produtos/${produto.id}`;
+  const detalheHref = `/produtos/${buildProductSlug(produto)}`;
   const capa = produto.imagens[0] ?? produto.imagem_url;
 
   return (
@@ -16,14 +17,15 @@ export function ProductCard({ produto }: { produto: Produto }) {
         className="-mx-6 -mt-6 block overflow-hidden rounded-t-lg bg-aurum-ice/[0.04] p-5"
       >
         {capa ? (
-          // <img>, não next/image: o domínio do Storage do Supabase varia por
-          // projeto e ainda não está configurado em remotePatterns.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={capa}
-            alt={produto.nome}
-            className="aspect-[4/5] w-full rounded-md object-contain"
-          />
+          <div className="relative aspect-[4/5] w-full rounded-md">
+            <Image
+              src={capa}
+              alt={produto.nome}
+              fill
+              sizes="(min-width: 1024px) 320px, (min-width: 640px) 45vw, 90vw"
+              className="rounded-md object-contain"
+            />
+          </div>
         ) : (
           <div className="relative aspect-[4/5] w-full rounded-md bg-aurum-emerald/30">
             <Image

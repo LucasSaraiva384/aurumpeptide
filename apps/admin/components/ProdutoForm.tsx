@@ -26,6 +26,12 @@ export function ProdutoForm({ produto }: { produto?: Produto }) {
   const [estoqueAtual, setEstoqueAtual] = useState(String(produto?.estoque_atual ?? 0));
   const [estoqueMinimo, setEstoqueMinimo] = useState(String(produto?.estoque_minimo ?? 0));
   const [ativo, setAtivo] = useState(produto?.ativo ?? true);
+  const [seoTitle, setSeoTitle] = useState(produto?.seo_title ?? "");
+  const [seoDescription, setSeoDescription] = useState(produto?.seo_description ?? "");
+  const [seoSlug, setSeoSlug] = useState(produto?.seo_slug ?? "");
+  const [seoCanonical, setSeoCanonical] = useState(produto?.seo_canonical ?? "");
+  const [seoOgImage, setSeoOgImage] = useState(produto?.seo_og_image ?? "");
+  const [seoRobots, setSeoRobots] = useState(produto?.seo_robots ?? "");
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -87,6 +93,12 @@ export function ProdutoForm({ produto }: { produto?: Produto }) {
       estoque_atual: Number(estoqueAtual),
       estoque_minimo: Number(estoqueMinimo),
       ativo,
+      seo_title: seoTitle || null,
+      seo_description: seoDescription || null,
+      seo_slug: seoSlug || null,
+      seo_canonical: seoCanonical || null,
+      seo_og_image: seoOgImage || null,
+      seo_robots: seoRobots || null,
     };
 
     const { error } = isEdicao
@@ -246,6 +258,78 @@ export function ProdutoForm({ produto }: { produto?: Produto }) {
             />
             Ativo no catálogo público
           </Label>
+
+          <div className="flex flex-col gap-4 border-t border-border pt-4">
+            <div>
+              <h3 className="font-heading text-base text-foreground">SEO</h3>
+              <p className="text-xs text-muted-foreground">
+                Todos os campos abaixo são opcionais — deixe em branco para gerar automaticamente
+                a partir do nome, descrição e categoria do produto.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="seoTitle">Título (SEO)</Label>
+              <Input
+                id="seoTitle"
+                value={seoTitle}
+                onChange={(e) => setSeoTitle(e.target.value)}
+                placeholder={nome || "Gerado a partir do nome do produto"}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="seoDescription">Meta descrição</Label>
+              <Textarea
+                id="seoDescription"
+                value={seoDescription}
+                onChange={(e) => setSeoDescription(e.target.value)}
+                rows={2}
+                placeholder="Gerada a partir da descrição do produto"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="seoSlug">Slug (URL)</Label>
+                <Input
+                  id="seoSlug"
+                  value={seoSlug}
+                  onChange={(e) => setSeoSlug(e.target.value)}
+                  placeholder="Gerado a partir do nome + id"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="seoRobots">Meta robots</Label>
+                <Input
+                  id="seoRobots"
+                  value={seoRobots}
+                  onChange={(e) => setSeoRobots(e.target.value)}
+                  placeholder="index,follow"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="seoCanonical">URL canônica</Label>
+              <Input
+                id="seoCanonical"
+                value={seoCanonical}
+                onChange={(e) => setSeoCanonical(e.target.value)}
+                placeholder="Gerada a partir do slug do produto"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="seoOgImage">Imagem para compartilhamento (Open Graph)</Label>
+              <Input
+                id="seoOgImage"
+                value={seoOgImage}
+                onChange={(e) => setSeoOgImage(e.target.value)}
+                placeholder="URL da imagem — usa a primeira foto do produto por padrão"
+              />
+            </div>
+          </div>
 
           {erro && <p className="text-sm text-destructive">{erro}</p>}
 

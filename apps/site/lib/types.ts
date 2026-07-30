@@ -18,6 +18,12 @@ export type Produto = {
   estoque_atual: number;
   ativo: boolean;
   publicado: boolean;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_slug: string | null;
+  seo_canonical: string | null;
+  seo_og_image: string | null;
+  seo_robots: string | null;
 };
 
 export type Database = {
