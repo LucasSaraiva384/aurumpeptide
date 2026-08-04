@@ -7,6 +7,9 @@ import { SignOutButton } from "@/components/SignOutButton";
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard" },
   { href: "/produtos", label: "Produtos" },
+  { href: "/categorias", label: "Categorias" },
+  { href: "/marcas", label: "Marcas" },
+  { href: "/aplicacoes", label: "Aplicações" },
   { href: "/pedidos", label: "Pedidos" },
   { href: "/clientes", label: "Clientes" },
   { href: "/compras", label: "Compras" },

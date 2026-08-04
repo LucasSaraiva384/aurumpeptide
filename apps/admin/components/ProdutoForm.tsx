@@ -8,11 +8,35 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
-import type { Produto } from "@/lib/types";
+import type { Aplicacao, Categoria, Marca, Produto } from "@/lib/types";
 
-export function ProdutoForm({ produto }: { produto?: Produto }) {
+// Radix Select não aceita value="" em SelectItem — usamos este sentinel
+// para representar "nenhuma categoria/marca selecionada" e convertemos
+// de volta para null no submit.
+const SEM_SELECAO = "none";
+
+export function ProdutoForm({
+  produto,
+  categorias,
+  marcas,
+  aplicacoes,
+  aplicacaoIdsIniciais,
+}: {
+  produto?: Produto;
+  categorias: Categoria[];
+  marcas: Marca[];
+  aplicacoes: Aplicacao[];
+  aplicacaoIdsIniciais?: string[];
+}) {
   const router = useRouter();
   const isEdicao = Boolean(produto);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -20,12 +44,19 @@ export function ProdutoForm({ produto }: { produto?: Produto }) {
   const [nome, setNome] = useState(produto?.nome ?? "");
   const [descricao, setDescricao] = useState(produto?.descricao ?? "");
   const [preco, setPreco] = useState(produto ? String(produto.preco) : "");
-  const [categoria, setCategoria] = useState(produto?.categoria ?? "");
+  const [categoriaId, setCategoriaId] = useState(produto?.categoria_id ?? SEM_SELECAO);
+  const [marcaId, setMarcaId] = useState(produto?.marca_id ?? SEM_SELECAO);
+  const [aplicacaoIds, setAplicacaoIds] = useState<string[]>(aplicacaoIdsIniciais ?? []);
+  const [keywords, setKeywords] = useState((produto?.keywords ?? []).join(", "));
   const [imagens, setImagens] = useState<string[]>(produto?.imagens ?? []);
   const [enviandoImagem, setEnviandoImagem] = useState(false);
   const [estoqueAtual, setEstoqueAtual] = useState(String(produto?.estoque_atual ?? 0));
   const [estoqueMinimo, setEstoqueMinimo] = useState(String(produto?.estoque_minimo ?? 0));
   const [ativo, setAtivo] = useState(produto?.ativo ?? true);
+  const [destaque, setDestaque] = useState(produto?.destaque ?? false);
+  const [maisVendido, setMaisVendido] = useState(produto?.mais_vendido ?? false);
+  const [lancamento, setLancamento] = useState(produto?.lancamento ?? false);
+  const [promocao, setPromocao] = useState(produto?.promocao ?? false);
   const [seoTitle, setSeoTitle] = useState(produto?.seo_title ?? "");
   const [seoDescription, setSeoDescription] = useState(produto?.seo_description ?? "");
   const [seoSlug, setSeoSlug] = useState(produto?.seo_slug ?? "");
@@ -34,6 +65,10 @@ export function ProdutoForm({ produto }: { produto?: Produto }) {
   const [seoRobots, setSeoRobots] = useState(produto?.seo_robots ?? "");
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+
+  function toggleAplicacao(id: string, marcado: boolean) {
+    setAplicacaoIds((atuais) => (marcado ? [...atuais, id] : atuais.filter((atual) => atual !== id)));
+  }
 
   async function handleUpload(event: FormEvent<HTMLInputElement>) {
     const files = event.currentTarget.files;
@@ -84,15 +119,27 @@ export function ProdutoForm({ produto }: { produto?: Produto }) {
     setSalvando(true);
 
     const supabase = createClient();
+    // categoria (texto livre legado) fica de fora do payload novo — não é
+    // mais escrita a partir daqui, só categoria_id. A coluna continua no
+    // banco intacta para produtos antigos que ainda não têm categoria_id.
     const payload = {
       nome,
       descricao: descricao || null,
       preco: Number(preco),
-      categoria: categoria || null,
+      categoria_id: categoriaId === SEM_SELECAO ? null : categoriaId,
+      marca_id: marcaId === SEM_SELECAO ? null : marcaId,
+      keywords: keywords
+        .split(",")
+        .map((termo) => termo.trim())
+        .filter((termo) => termo.length > 0),
       imagens,
       estoque_atual: Number(estoqueAtual),
       estoque_minimo: Number(estoqueMinimo),
       ativo,
+      destaque,
+      mais_vendido: maisVendido,
+      lancamento,
+      promocao,
       seo_title: seoTitle || null,
       seo_description: seoDescription || null,
       seo_slug: seoSlug || null,
@@ -101,18 +148,53 @@ export function ProdutoForm({ produto }: { produto?: Produto }) {
       seo_robots: seoRobots || null,
     };
 
-    const { error } = isEdicao
-      ? await supabase.from("produtos").update(payload).eq("id", produto!.id)
-      : await supabase.from("produtos").insert(payload);
+    let produtoId = produto?.id;
 
-    setSalvando(false);
-
-    if (error) {
-      setErro(error.message);
-      toast.error("Erro ao salvar produto", { description: error.message });
-      return;
+    if (isEdicao) {
+      const { error } = await supabase.from("produtos").update(payload).eq("id", produto!.id);
+      if (error) {
+        setSalvando(false);
+        setErro(error.message);
+        toast.error("Erro ao salvar produto", { description: error.message });
+        return;
+      }
+    } else {
+      const { data, error } = await supabase.from("produtos").insert(payload).select("id").single();
+      if (error || !data) {
+        setSalvando(false);
+        setErro(error?.message ?? "Erro ao criar produto.");
+        toast.error("Erro ao salvar produto", { description: error?.message });
+        return;
+      }
+      produtoId = data.id;
     }
 
+    // Sincroniza produto_aplicacoes: remove os vínculos atuais e recria a
+    // partir da seleção corrente. Simples e correto mesmo sem diffing fino,
+    // já que o volume de aplicações por produto é pequeno.
+    if (produtoId) {
+      const { error: erroDelete } = await supabase.from("produto_aplicacoes").delete().eq("produto_id", produtoId);
+      if (erroDelete) {
+        setSalvando(false);
+        setErro(erroDelete.message);
+        toast.error("Erro ao salvar aplicações do produto", { description: erroDelete.message });
+        return;
+      }
+
+      if (aplicacaoIds.length > 0) {
+        const { error: erroInsert } = await supabase
+          .from("produto_aplicacoes")
+          .insert(aplicacaoIds.map((aplicacaoId) => ({ produto_id: produtoId!, aplicacao_id: aplicacaoId })));
+        if (erroInsert) {
+          setSalvando(false);
+          setErro(erroInsert.message);
+          toast.error("Erro ao salvar aplicações do produto", { description: erroInsert.message });
+          return;
+        }
+      }
+    }
+
+    setSalvando(false);
     toast.success(isEdicao ? "Produto atualizado." : "Produto criado.");
     router.push("/produtos");
     router.refresh();
@@ -152,13 +234,68 @@ export function ProdutoForm({ produto }: { produto?: Produto }) {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="categoria">Categoria</Label>
+              <Select value={categoriaId} onValueChange={setCategoriaId}>
+                <SelectTrigger id="categoria" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SEM_SELECAO}>Sem categoria</SelectItem>
+                  {categorias.map((categoria) => (
+                    <SelectItem key={categoria.id} value={categoria.id}>
+                      {categoria.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="marca">Marca</Label>
+              <Select value={marcaId} onValueChange={setMarcaId}>
+                <SelectTrigger id="marca" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SEM_SELECAO}>Sem marca</SelectItem>
+                  {marcas.map((marca) => (
+                    <SelectItem key={marca.id} value={marca.id}>
+                      {marca.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="keywords">Palavras-chave</Label>
               <Input
-                id="categoria"
-                value={categoria ?? ""}
-                onChange={(e) => setCategoria(e.target.value)}
+                id="keywords"
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                placeholder="separadas por vírgula"
               />
             </div>
           </div>
+
+          {aplicacoes.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <Label>Aplicações</Label>
+              <div className="grid grid-cols-2 gap-2 rounded-md border border-border p-3 sm:grid-cols-3">
+                {aplicacoes.map((aplicacao) => (
+                  <label key={aplicacao.id} className="flex items-center gap-2 text-sm text-foreground">
+                    <Checkbox
+                      checked={aplicacaoIds.includes(aplicacao.id)}
+                      onCheckedChange={(checked: boolean | "indeterminate") =>
+                        toggleAplicacao(aplicacao.id, checked === true)
+                      }
+                    />
+                    {aplicacao.nome}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="imagens">Fotos do produto</Label>
@@ -258,6 +395,40 @@ export function ProdutoForm({ produto }: { produto?: Produto }) {
             />
             Ativo no catálogo público
           </Label>
+
+          <div className="flex flex-col gap-3 border-t border-border pt-4">
+            <h3 className="font-heading text-base text-foreground">Vitrine</h3>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <Checkbox
+                  checked={destaque}
+                  onCheckedChange={(checked: boolean | "indeterminate") => setDestaque(checked === true)}
+                />
+                Destaque
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <Checkbox
+                  checked={maisVendido}
+                  onCheckedChange={(checked: boolean | "indeterminate") => setMaisVendido(checked === true)}
+                />
+                Mais vendido
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <Checkbox
+                  checked={lancamento}
+                  onCheckedChange={(checked: boolean | "indeterminate") => setLancamento(checked === true)}
+                />
+                Lançamento
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <Checkbox
+                  checked={promocao}
+                  onCheckedChange={(checked: boolean | "indeterminate") => setPromocao(checked === true)}
+                />
+                Promoção
+              </label>
+            </div>
+          </div>
 
           <div className="flex flex-col gap-4 border-t border-border pt-4">
             <div>

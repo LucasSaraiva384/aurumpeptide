@@ -125,7 +125,7 @@ export default async function ProdutoPage({
   const urlCanonica = buildProductMetadata(produto).canonical;
   const breadcrumbItems = [
     { name: "Início", url: absoluteUrl("/") },
-    ...(produto.categoria ? [{ name: produto.categoria, url: absoluteUrl("/#catalogo") }] : []),
+    ...(produto.categoria ? [{ name: produto.categoria, url: absoluteUrl("/produtos") }] : []),
     { name: produto.nome, url: urlCanonica },
   ];
 
@@ -135,7 +135,7 @@ export default async function ProdutoPage({
       <JsonLd data={breadcrumbSchema(breadcrumbItems)} />
 
       <Link
-        href="/#catalogo"
+        href="/produtos"
         className="mb-10 inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-aurum-ice/60 transition-colors hover:text-aurum-gold"
       >
         <span aria-hidden>←</span>

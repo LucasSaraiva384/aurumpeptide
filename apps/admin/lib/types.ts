@@ -11,7 +11,19 @@ export type Produto = {
   nome: string;
   descricao: string | null;
   preco: number;
+  // categoria: texto livre legado (supabase/schema.sql) — não escrita mais
+  // pelo ProdutoForm a partir de supabase/catalogo.sql, mas a coluna
+  // continua existindo e sendo lida como fallback. categoria_id é a fonte
+  // nova (FK para a tabela categorias).
   categoria: string | null;
+  categoria_id: string | null;
+  marca_id: string | null;
+  // keywords: termos de busca livres (supabase/catalogo.sql), editados como
+  // string única separada por vírgula no ProdutoForm.
+  keywords: string[];
+  mais_vendido: boolean;
+  lancamento: boolean;
+  promocao: boolean;
   imagem_url: string | null;
   imagens: string[];
   estoque_atual: number;
@@ -34,6 +46,57 @@ export type Produto = {
   seo_robots: string | null;
   created_at: string;
   updated_at: string;
+};
+
+// Categoria / Marca / Aplicacao — catálogo administrável (supabase/catalogo.sql).
+// Mesmo formato nas três tabelas (nome/slug/descricao/imagem/ordem/ativo);
+// Aplicacao ganha também os campos seo_* opcionais, mesmo padrão de Produto.
+export type Categoria = {
+  id: string;
+  nome: string;
+  slug: string;
+  descricao: string | null;
+  imagem_url: string | null;
+  ordem: number;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Marca = {
+  id: string;
+  nome: string;
+  slug: string;
+  descricao: string | null;
+  logo_url: string | null;
+  ordem: number;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Aplicacao = {
+  id: string;
+  nome: string;
+  slug: string;
+  descricao: string | null;
+  imagem_url: string | null;
+  ordem: number;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_canonical: string | null;
+  seo_og_image: string | null;
+  seo_robots: string | null;
+};
+
+// produto_aplicacoes — junção N:N entre produtos e aplicacoes (supabase/catalogo.sql).
+export type ProdutoAplicacao = {
+  produto_id: string;
+  aplicacao_id: string;
+  created_at: string;
 };
 
 export type Cliente = {
@@ -150,6 +213,12 @@ export type Database = {
             | "id"
             | "descricao"
             | "categoria"
+            | "categoria_id"
+            | "marca_id"
+            | "keywords"
+            | "mais_vendido"
+            | "lancamento"
+            | "promocao"
             | "imagem_url"
             | "imagens"
             | "estoque_atual"
@@ -170,6 +239,50 @@ export type Database = {
         > &
           Pick<Produto, "nome" | "preco">;
         Update: Partial<Produto>;
+        Relationships: [];
+      };
+      categorias: {
+        Row: Categoria;
+        Insert: Partial<Pick<Categoria, "id" | "descricao" | "imagem_url" | "ordem" | "ativo" | "created_at" | "updated_at">> &
+          Pick<Categoria, "nome" | "slug">;
+        Update: Partial<Categoria>;
+        Relationships: [];
+      };
+      marcas: {
+        Row: Marca;
+        Insert: Partial<Pick<Marca, "id" | "descricao" | "logo_url" | "ordem" | "ativo" | "created_at" | "updated_at">> &
+          Pick<Marca, "nome" | "slug">;
+        Update: Partial<Marca>;
+        Relationships: [];
+      };
+      aplicacoes: {
+        Row: Aplicacao;
+        Insert: Partial<
+          Pick<
+            Aplicacao,
+            | "id"
+            | "descricao"
+            | "imagem_url"
+            | "ordem"
+            | "ativo"
+            | "created_at"
+            | "updated_at"
+            | "seo_title"
+            | "seo_description"
+            | "seo_canonical"
+            | "seo_og_image"
+            | "seo_robots"
+          >
+        > &
+          Pick<Aplicacao, "nome" | "slug">;
+        Update: Partial<Aplicacao>;
+        Relationships: [];
+      };
+      produto_aplicacoes: {
+        Row: ProdutoAplicacao;
+        Insert: Partial<Pick<ProdutoAplicacao, "created_at">> &
+          Pick<ProdutoAplicacao, "produto_id" | "aplicacao_id">;
+        Update: Partial<ProdutoAplicacao>;
         Relationships: [];
       };
       clientes: {

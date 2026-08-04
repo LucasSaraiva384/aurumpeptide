@@ -60,7 +60,13 @@ export function Hero() {
             variants={fadeUp}
             className="mt-2 flex flex-col items-center gap-4 sm:flex-row"
           >
-            <ButtonLink href="#sobre" size="lg" variant="secondary">
+            <ButtonLink
+              href="https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb"
+              target="_blank"
+              rel="noopener noreferrer"
+              size="lg"
+              variant="secondary"
+            >
               Conheça a Aurum
             </ButtonLink>
             <ButtonLink

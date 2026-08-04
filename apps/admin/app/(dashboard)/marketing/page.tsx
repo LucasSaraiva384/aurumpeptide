@@ -27,9 +27,9 @@ export default async function MarketingPage() {
   const [{ data: produtos, error: erroProdutos }, { data: midias, error: erroMidias }] = await Promise.all([
     supabase
       .from("produtos")
-      .select("id, nome, publicado, destaque")
+      .select("id, nome, publicado, destaque, mais_vendido, lancamento, promocao")
       .order("nome")
-      .returns<Pick<Produto, "id" | "nome" | "publicado" | "destaque">[]>(),
+      .returns<Pick<Produto, "id" | "nome" | "publicado" | "destaque" | "mais_vendido" | "lancamento" | "promocao">[]>(),
     supabase.from("marketing_midias").select("*").order("ordem").returns<MarketingMidia[]>(),
   ]);
 
@@ -62,6 +62,9 @@ export default async function MarketingPage() {
                       produtoId={produto.id}
                       publicadoInicial={produto.publicado}
                       destaqueInicial={produto.destaque}
+                      maisVendidoInicial={produto.mais_vendido}
+                      lancamentoInicial={produto.lancamento}
+                      promocaoInicial={produto.promocao}
                     />
                   </TableCell>
                 </TableRow>

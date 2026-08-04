@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
-import { Container } from "@aurum/ui";
+import { Container, ButtonLink } from "@aurum/ui";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import type { Produto } from "@/lib/types";
-import { groupByCategoria } from "@/lib/produtos";
+import type { Aplicacao, Produto } from "@/lib/types";
 import { absoluteUrl } from "@/lib/seo";
-import { collectionPageSchema } from "@/lib/schema";
+import { webPageSchema } from "@/lib/schema";
 import { JsonLd } from "@/components/JsonLd";
 import { Hero } from "@/components/Hero";
-import { Sobre } from "@/components/Sobre";
 import { Pilares } from "@/components/Pilares";
-import { ProductCatalog } from "@/components/ProductCatalog";
+import { ProductGrid } from "@/components/ProductGrid";
+import { ExploreObjetivos } from "@/components/ExploreObjetivos";
 import { EmptyState } from "@/components/EmptyState";
 import { QualidadeInternacional } from "@/components/QualidadeInternacional";
 import { ExperienciaPremium } from "@/components/ExperienciaPremium";
@@ -18,7 +17,7 @@ import { FAQ } from "@/components/FAQ";
 import { CTAFinal } from "@/components/CTAFinal";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
-// Catálogo depende de dados que mudam (estoque, produtos ativos) e do
+// Vitrine depende de dados que mudam (estoque, produtos ativos) e do
 // Supabase real estar configurado — renderizar sob demanda em vez de
 // estático evita tentar buscar dados (ou falhar) durante `next build`.
 export const dynamic = "force-dynamic";
@@ -40,7 +39,7 @@ export const metadata: Metadata = {
   },
 };
 
-async function getProdutosAtivos(): Promise<{ produtos: Produto[]; erro: string | null }> {
+async function getProdutosVitrine(): Promise<{ produtos: Produto[]; erro: string | null }> {
   if (!isSupabaseConfigured) {
     return { produtos: [], erro: "config" };
   }
@@ -48,11 +47,12 @@ async function getProdutosAtivos(): Promise<{ produtos: Produto[]; erro: string 
   const { data, error } = await supabase
     .from("produtos")
     .select(
-      "id, nome, descricao, preco, categoria, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots",
+      "id, nome, descricao, preco, categoria, categoria_id, marca_id, keywords, destaque, mais_vendido, lancamento, promocao, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots",
     )
     .eq("ativo", true)
     .eq("publicado", true)
-    .order("nome");
+    .order("nome")
+    .returns<Produto[]>();
 
   if (error) {
     return { produtos: [], erro: error.message };
@@ -61,69 +61,44 @@ async function getProdutosAtivos(): Promise<{ produtos: Produto[]; erro: string 
   return { produtos: data ?? [], erro: null };
 }
 
-/** Filtra por nome/categoria/descricao — usado pela busca controlada por `?q=`. */
-function filtrarProdutos(produtos: Produto[], termo: string): Produto[] {
-  const alvo = termo.trim().toLowerCase();
-  if (!alvo) return produtos;
+async function getAplicacoesAtivas(): Promise<Aplicacao[]> {
+  if (!isSupabaseConfigured) return [];
 
-  return produtos.filter((produto) => {
-    const campos = [produto.nome, produto.categoria, produto.descricao];
-    return campos.some((campo) => campo?.toLowerCase().includes(alvo));
-  });
+  const { data } = await supabase
+    .from("aplicacoes")
+    .select(
+      "id, nome, slug, descricao, imagem_url, ordem, ativo, seo_title, seo_description, seo_canonical, seo_og_image, seo_robots",
+    )
+    .eq("ativo", true)
+    .order("ordem")
+    .returns<Aplicacao[]>();
+
+  return data ?? [];
 }
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string | string[] }>;
-}) {
-  const { q } = await searchParams;
-  const query = Array.isArray(q) ? (q[0] ?? "") : (q ?? "");
+export default async function HomePage() {
+  const [{ produtos, erro }, aplicacoes] = await Promise.all([getProdutosVitrine(), getAplicacoesAtivas()]);
 
-  const { produtos: todosProdutos, erro } = await getProdutosAtivos();
-  const produtos = filtrarProdutos(todosProdutos, query);
-  const grupos = groupByCategoria(produtos);
+  const destaques = produtos.filter((produto) => produto.destaque);
+  const maisVendidos = produtos.filter((produto) => produto.mais_vendido);
+  const novidades = produtos.filter((produto) => produto.lancamento);
+  const promocoes = produtos.filter((produto) => produto.promocao);
 
   return (
     <>
-      <JsonLd data={collectionPageSchema(todosProdutos, absoluteUrl("/"))} />
+      <JsonLd data={webPageSchema({ name: TITLE, description: DESCRIPTION, url: absoluteUrl("/") })} />
 
       <Hero />
-      <Sobre />
       <Pilares />
 
-      <section id="catalogo" className="py-24 sm:py-32">
-        <Container className="flex flex-col gap-14">
+      <section className="py-24 sm:py-32">
+        <Container className="flex flex-col gap-20">
           <ScrollReveal className="flex flex-col items-center gap-4 text-center">
-            <span className="text-xs uppercase tracking-[0.35em] text-aurum-gold">
-              Catálogo
-            </span>
+            <span className="text-xs uppercase tracking-[0.35em] text-aurum-gold">Catálogo</span>
             <h2 className="max-w-2xl text-balance font-heading text-3xl leading-snug text-aurum-ice sm:text-4xl">
               A seleção oficial Aurum Peptide
             </h2>
           </ScrollReveal>
-
-          {!erro && todosProdutos.length > 0 && (
-            <form action="/" className="mx-auto flex w-full max-w-md items-center gap-2">
-              <label htmlFor="busca-produtos" className="sr-only">
-                Buscar por nome ou categoria
-              </label>
-              <input
-                id="busca-produtos"
-                type="search"
-                name="q"
-                defaultValue={query}
-                placeholder="Buscar por nome ou categoria..."
-                className="w-full rounded-full border border-aurum-gold/20 bg-aurum-green-deep/60 px-4 py-2 text-sm text-aurum-ice placeholder:text-aurum-ice/40 backdrop-blur-sm outline-none transition-colors focus:border-aurum-gold/50"
-              />
-              <button
-                type="submit"
-                className="shrink-0 rounded-full border border-aurum-gold/30 px-4 py-2 text-xs uppercase tracking-[0.15em] text-aurum-gold transition-colors hover:border-aurum-gold/60"
-              >
-                Buscar
-              </button>
-            </form>
-          )}
 
           {erro === "config" && (
             <p className="mx-auto max-w-md text-center text-sm text-aurum-gold">
@@ -136,15 +111,32 @@ export default async function HomePage({
               Não foi possível carregar o catálogo agora. Tente novamente em instantes.
             </p>
           )}
-          {!erro && todosProdutos.length === 0 && <EmptyState />}
-          {!erro && todosProdutos.length > 0 && produtos.length === 0 && (
-            <p className="mx-auto max-w-md text-center text-sm text-aurum-ice/70">
-              Nenhum produto encontrado para &ldquo;{query}&rdquo;.
-            </p>
+          {!erro && produtos.length === 0 && <EmptyState />}
+
+          {!erro && destaques.length > 0 && (
+            <VitrineGrupo eyebrow="Seleção" titulo="Destaques Aurum" produtos={destaques} />
           )}
-          {!erro && produtos.length > 0 && <ProductCatalog groups={grupos} />}
+          {!erro && maisVendidos.length > 0 && (
+            <VitrineGrupo eyebrow="Preferidos" titulo="Mais vendidos" produtos={maisVendidos} />
+          )}
+          {!erro && novidades.length > 0 && (
+            <VitrineGrupo eyebrow="Chegou agora" titulo="Novidades" produtos={novidades} />
+          )}
+          {!erro && promocoes.length > 0 && (
+            <VitrineGrupo eyebrow="Por tempo limitado" titulo="Promoções" produtos={promocoes} />
+          )}
+
+          {!erro && produtos.length > 0 && (
+            <div className="flex justify-center">
+              <ButtonLink href="/produtos" variant="secondary">
+                Ver catálogo completo
+              </ButtonLink>
+            </div>
+          )}
         </Container>
       </section>
+
+      <ExploreObjetivos aplicacoes={aplicacoes} />
 
       <QualidadeInternacional />
       <ExperienciaPremium />
@@ -152,5 +144,19 @@ export default async function HomePage({
       <FAQ />
       <CTAFinal />
     </>
+  );
+}
+
+/** Uma vitrine da Home (Destaques/Mais vendidos/Novidades/Promoções) — só
+ * chamada quando `produtos.length > 0`, então sempre renderiza algo. */
+function VitrineGrupo({ eyebrow, titulo, produtos }: { eyebrow: string; titulo: string; produtos: Produto[] }) {
+  return (
+    <ScrollReveal className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <span className="text-xs uppercase tracking-[0.3em] text-aurum-gold">{eyebrow}</span>
+        <h3 className="font-heading text-2xl text-aurum-ice">{titulo}</h3>
+      </div>
+      <ProductGrid produtos={produtos} />
+    </ScrollReveal>
   );
 }

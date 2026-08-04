@@ -2,11 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Container, ButtonLink } from "@aurum/ui";
 import { buildWhatsappLink } from "@/lib/whatsapp";
+import { SearchBox } from "@/components/SearchBox";
 
 const NAV_ITEMS = [
-  { href: "#sobre", label: "Sobre" },
   { href: "#pilares", label: "Pilares" },
-  { href: "#catalogo", label: "Catálogo" },
+  { href: "/produtos", label: "Produtos" },
   { href: "#qualidade", label: "Qualidade" },
   { href: "#faq", label: "FAQ" },
 ];
@@ -32,13 +32,22 @@ export function Header() {
             </span>
           </span>
         </Link>
-        <nav className="hidden items-center gap-8 text-xs uppercase tracking-[0.2em] text-aurum-ice/70 lg:flex">
-          {NAV_ITEMS.map((item) => (
-            <a key={item.href} href={item.href} className="transition-colors hover:text-aurum-gold">
-              {item.label}
-            </a>
-          ))}
-        </nav>
+        <div className="hidden items-center gap-8 lg:flex">
+          <nav className="flex items-center gap-8 text-xs uppercase tracking-[0.2em] text-aurum-ice/70">
+            {NAV_ITEMS.map((item) =>
+              item.href.startsWith("#") ? (
+                <a key={item.href} href={item.href} className="transition-colors hover:text-aurum-gold">
+                  {item.label}
+                </a>
+              ) : (
+                <Link key={item.href} href={item.href} className="transition-colors hover:text-aurum-gold">
+                  {item.label}
+                </Link>
+              ),
+            )}
+          </nav>
+          <SearchBox />
+        </div>
         <ButtonLink
           href={buildWhatsappLink()}
           target="_blank"

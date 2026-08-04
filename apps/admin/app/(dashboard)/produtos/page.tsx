@@ -16,13 +16,28 @@ import type { Produto } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+// A coluna texto-livre legado `categoria` e o relacionamento novo
+// `categoria_id -> categorias` têm o mesmo nome de campo na tabela — o
+// alias abaixo evita que o join sobrescreva o texto legado no objeto
+// retornado pelo supabase-js.
+type ProdutoComCategoria = Omit<Produto, "categoria"> & {
+  categoria_legado: string | null;
+  categoria: { nome: string } | null;
+};
+
 export default async function ProdutosPage() {
   const supabase = await createClient();
+  // Não dá para combinar select("*") com um embed apelidado "categoria" —
+  // o wildcard já traz a coluna de texto legado "categoria", e ter dois
+  // campos de mesmo nome no resultado quebra o select do PostgREST. Por
+  // isso listamos as colunas explicitamente aqui em vez de usar "*".
   const { data: produtos, error } = await supabase
     .from("produtos")
-    .select("*")
+    .select(
+      "id, nome, descricao, preco, categoria_id, marca_id, keywords, mais_vendido, lancamento, promocao, imagem_url, imagens, estoque_atual, estoque_minimo, ativo, custo_medio, publicado, destaque, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots, created_at, updated_at, categoria_legado:categoria, categoria:categorias(nome)",
+    )
     .order("nome")
-    .returns<Produto[]>();
+    .returns<ProdutoComCategoria[]>();
 
   return (
     <div>
@@ -53,7 +68,9 @@ export default async function ProdutosPage() {
                 <TableCell className="whitespace-normal font-medium text-foreground">
                   {produto.nome}
                 </TableCell>
-                <TableCell className="text-muted-foreground">{produto.categoria ?? "—"}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {produto.categoria?.nome ?? produto.categoria_legado ?? "—"}
+                </TableCell>
                 <TableCell>{currencyFormatter.format(produto.preco)}</TableCell>
                 <TableCell>
                   {produto.estoque_atual <= produto.estoque_minimo ? (

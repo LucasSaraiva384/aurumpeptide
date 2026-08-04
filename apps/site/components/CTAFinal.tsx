@@ -25,7 +25,13 @@ export function CTAFinal() {
           >
             Falar com um Especialista
           </ButtonLink>
-          <ButtonLink href="#sobre" size="lg" variant="secondary">
+          <ButtonLink
+            href="https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb"
+            target="_blank"
+            rel="noopener noreferrer"
+            size="lg"
+            variant="secondary"
+          >
             Conheça a Aurum Peptide
           </ButtonLink>
         </ScrollReveal>
