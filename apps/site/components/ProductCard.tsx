@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Card, ButtonLink } from "@aurum/ui";
+import { Card } from "@aurum/ui";
 import type { Produto } from "@/lib/types";
 import { currencyFormatter } from "@/lib/format";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { buildProductSlug } from "@/lib/seo";
+import { WhatsappButtonLink } from "@/components/WhatsappButtonLink";
 
 export function ProductCard({ produto }: { produto: Produto }) {
   const detalheHref = `/produtos/${buildProductSlug(produto)}`;
@@ -46,7 +47,9 @@ export function ProductCard({ produto }: { produto: Produto }) {
         <p className="font-heading text-xl text-aurum-gold">
           {currencyFormatter.format(produto.preco)}
         </p>
-        <ButtonLink
+        <WhatsappButtonLink
+          origem="product-card"
+          produtoNome={produto.nome}
           href={buildWhatsappLink(produto.nome)}
           target="_blank"
           rel="noopener noreferrer"
@@ -54,7 +57,7 @@ export function ProductCard({ produto }: { produto: Produto }) {
           className="w-full"
         >
           Comprar no WhatsApp
-        </ButtonLink>
+        </WhatsappButtonLink>
       </div>
     </Card>
   );

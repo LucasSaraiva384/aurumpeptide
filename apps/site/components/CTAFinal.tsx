@@ -1,6 +1,7 @@
 import { Container, ButtonLink } from "@aurum/ui";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { WhatsappButtonLink } from "@/components/WhatsappButtonLink";
 
 export function CTAFinal() {
   return (
@@ -17,14 +18,15 @@ export function CTAFinal() {
         </ScrollReveal>
 
         <ScrollReveal delay={0.12} className="flex flex-col items-center gap-4 sm:flex-row">
-          <ButtonLink
+          <WhatsappButtonLink
+            origem="cta-final"
             href={buildWhatsappLink()}
             target="_blank"
             rel="noopener noreferrer"
             size="lg"
           >
             Falar com um Especialista
-          </ButtonLink>
+          </WhatsappButtonLink>
           <ButtonLink
             href="https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb"
             target="_blank"

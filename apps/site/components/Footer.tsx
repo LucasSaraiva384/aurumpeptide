@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Container, ButtonLink, Divider } from "@aurum/ui";
 import { buildWhatsappLink } from "@/lib/whatsapp";
+import { WhatsappButtonLink } from "@/components/WhatsappButtonLink";
 
 const INSTAGRAM_URL = "https://www.instagram.com/aurumpeptide/";
 
@@ -17,14 +18,15 @@ export function Footer() {
         </p>
 
         <div className="flex flex-col items-center gap-4 sm:flex-row">
-          <ButtonLink
+          <WhatsappButtonLink
+            origem="footer"
             href={buildWhatsappLink()}
             target="_blank"
             rel="noopener noreferrer"
             variant="secondary"
           >
             Falar no WhatsApp
-          </ButtonLink>
+          </WhatsappButtonLink>
           <ButtonLink
             href={INSTAGRAM_URL}
             target="_blank"

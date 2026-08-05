@@ -2,12 +2,13 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
-import { Badge, Container, ButtonLink } from "@aurum/ui";
+import { Badge, Container } from "@aurum/ui";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { currencyFormatter } from "@/lib/format";
 import { ProductGallery } from "@/components/ProductGallery";
 import { JsonLd } from "@/components/JsonLd";
+import { WhatsappButtonLink } from "@/components/WhatsappButtonLink";
 import { absoluteUrl, buildProductMetadata, buildProductSlug } from "@/lib/seo";
 import { breadcrumbSchema, productSchema } from "@/lib/schema";
 import type { Produto } from "@/lib/types";
@@ -158,7 +159,9 @@ export default async function ProdutoPage({
           <p className="font-heading text-2xl text-aurum-gold">
             {currencyFormatter.format(produto.preco)}
           </p>
-          <ButtonLink
+          <WhatsappButtonLink
+            origem="product-page"
+            produtoNome={produto.nome}
             href={buildWhatsappLink(produto.nome)}
             target="_blank"
             rel="noopener noreferrer"
@@ -166,7 +169,7 @@ export default async function ProdutoPage({
             className="mt-2 w-fit"
           >
             Comprar no WhatsApp
-          </ButtonLink>
+          </WhatsappButtonLink>
         </div>
       </div>
     </Container>

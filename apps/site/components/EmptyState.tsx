@@ -1,5 +1,6 @@
-import { ButtonLink, Divider } from "@aurum/ui";
+import { Divider } from "@aurum/ui";
 import { buildWhatsappLink } from "@/lib/whatsapp";
+import { WhatsappButtonLink } from "@/components/WhatsappButtonLink";
 
 export function EmptyState() {
   return (
@@ -12,7 +13,8 @@ export function EmptyState() {
         Nossa seleção está sendo atualizada. Fale diretamente com a equipe da Aurum Peptide pelo
         WhatsApp para mais informações.
       </p>
-      <ButtonLink
+      <WhatsappButtonLink
+        origem="empty-state"
         href={buildWhatsappLink()}
         target="_blank"
         rel="noopener noreferrer"
@@ -20,7 +22,7 @@ export function EmptyState() {
         className="mt-1"
       >
         Falar no WhatsApp
-      </ButtonLink>
+      </WhatsappButtonLink>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Container, ButtonLink } from "@aurum/ui";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { MoleculeGlyph } from "@/components/MoleculeGlyph";
 import { Spotlight } from "@/components/Spotlight";
+import { WhatsappButtonLink } from "@/components/WhatsappButtonLink";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -69,14 +70,15 @@ export function Hero() {
             >
               Entre no nosso grupo de promoções
             </ButtonLink>
-            <ButtonLink
+            <WhatsappButtonLink
+              origem="hero"
               href={buildWhatsappLink()}
               target="_blank"
               rel="noopener noreferrer"
               size="lg"
             >
               Fale com um Especialista
-            </ButtonLink>
+            </WhatsappButtonLink>
           </motion.div>
         </Container>
       </section>

@@ -10,3 +10,23 @@ export function buildWhatsappLink(produtoNome?: string): string {
     : "Olá! Gostaria de mais informações sobre os produtos da Aurum Peptide.";
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(mensagem)}`;
 }
+
+declare global {
+  interface Window {
+    dataLayer?: Record<string, unknown>[];
+  }
+}
+
+/**
+ * Evento customizado pro GTM criar um trigger de conversão do Google Ads
+ * (clique em CTA de WhatsApp). `origem` identifica qual botão foi clicado
+ * (ex.: "hero", "header", "product-card") para segmentar depois no GA4.
+ */
+export function trackWhatsappClick(origem: string, produtoNome?: string): void {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: "whatsapp_click",
+    whatsapp_origem: origem,
+    ...(produtoNome ? { whatsapp_produto: produtoNome } : {}),
+  });
+}

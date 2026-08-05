@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Container, ButtonLink } from "@aurum/ui";
+import { Container } from "@aurum/ui";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { SearchBox } from "@/components/SearchBox";
+import { WhatsappButtonLink } from "@/components/WhatsappButtonLink";
 
 const NAV_ITEMS = [
   { href: "#pilares", label: "Pilares" },
@@ -48,7 +49,8 @@ export function Header() {
           </nav>
           <SearchBox />
         </div>
-        <ButtonLink
+        <WhatsappButtonLink
+          origem="header"
           href={buildWhatsappLink()}
           target="_blank"
           rel="noopener noreferrer"
@@ -56,7 +58,7 @@ export function Header() {
           className="shrink-0 whitespace-nowrap text-[0.65rem] sm:text-xs"
         >
           Fale com um Especialista
-        </ButtonLink>
+        </WhatsappButtonLink>
       </Container>
     </header>
   );
