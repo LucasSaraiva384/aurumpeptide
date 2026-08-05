@@ -67,7 +67,7 @@ export function Hero() {
               size="lg"
               variant="secondary"
             >
-              Conheça a Aurum
+              Entre no nosso grupo de promoções
             </ButtonLink>
             <ButtonLink
               href={buildWhatsappLink()}

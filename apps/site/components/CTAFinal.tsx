@@ -32,7 +32,7 @@ export function CTAFinal() {
             size="lg"
             variant="secondary"
           >
-            Conheça a Aurum Peptide
+            Entre no nosso grupo de promoções
           </ButtonLink>
         </ScrollReveal>
       </Container>
