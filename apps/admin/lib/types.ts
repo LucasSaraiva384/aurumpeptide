@@ -165,6 +165,11 @@ export type Compra = {
   produto_id: string;
   quantidade: number;
   custo_unitario: number;
+  // frete: valor pago de frete nessa compra, separado do custo_unitario do
+  // produto (supabase/compras-frete-ajuste-caixa.sql) — entra na coluna
+  // gerada valor_total (soma o caixa) mas não no custo médio ponderado do
+  // produto (handle_new_compra usa só custo_unitario pra isso).
+  frete: number;
   // valor_total: coluna gerada (generated always as stored) — nunca inserida
   // manualmente, só lida.
   valor_total: number;
@@ -332,7 +337,8 @@ export type Database = {
       compras: {
         Row: Compra;
         // valor_total não entra no Insert: é coluna gerada pelo Postgres.
-        Insert: Partial<Pick<Compra, "id" | "data" | "observacao" | "created_at">> &
+        // frete é opcional: o banco tem default 0.
+        Insert: Partial<Pick<Compra, "id" | "frete" | "data" | "observacao" | "created_at">> &
           Pick<Compra, "produto_id" | "quantidade" | "custo_unitario">;
         Update: Partial<Compra>;
         Relationships: [];
@@ -376,6 +382,7 @@ export type Database = {
           p_produto_id: string;
           p_quantidade: number;
           p_custo_unitario: number;
+          p_frete: number;
           p_data: string;
           p_observacao: string | null;
         };

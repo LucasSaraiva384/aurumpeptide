@@ -33,6 +33,7 @@ export function CompraForm({ compra }: { compra?: Compra }) {
   const [produtoId, setProdutoId] = useState(compra?.produto_id ?? "");
   const [quantidade, setQuantidade] = useState(compra ? String(compra.quantidade) : "1");
   const [custoUnitario, setCustoUnitario] = useState(compra ? String(compra.custo_unitario) : "");
+  const [frete, setFrete] = useState(compra?.frete ? String(compra.frete) : "0");
   const [data, setData] = useState(() => compra?.data ?? new Date().toISOString().slice(0, 10));
   const [observacao, setObservacao] = useState(compra?.observacao ?? "");
   const [erro, setErro] = useState<string | null>(null);
@@ -47,7 +48,7 @@ export function CompraForm({ compra }: { compra?: Compra }) {
       .then(({ data }) => setProdutos(data ?? []));
   }, []);
 
-  const valorTotal = Number(quantidade || 0) * Number(custoUnitario || 0);
+  const valorTotal = Number(quantidade || 0) * Number(custoUnitario || 0) + Number(frete || 0);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,6 +79,7 @@ export function CompraForm({ compra }: { compra?: Compra }) {
         p_produto_id: produtoId,
         p_quantidade: Number(quantidade),
         p_custo_unitario: Number(custoUnitario),
+        p_frete: Number(frete || 0),
         p_data: data,
         p_observacao: observacao || null,
       });
@@ -100,6 +102,7 @@ export function CompraForm({ compra }: { compra?: Compra }) {
       produto_id: produtoId,
       quantidade: Number(quantidade),
       custo_unitario: Number(custoUnitario),
+      frete: Number(frete || 0),
       data,
       observacao: observacao || null,
     });
@@ -115,6 +118,7 @@ export function CompraForm({ compra }: { compra?: Compra }) {
     toast.success("Compra registrada — estoque e custo médio atualizados.");
     setQuantidade("1");
     setCustoUnitario("");
+    setFrete("0");
     setObservacao("");
     router.refresh();
   }
@@ -169,15 +173,25 @@ export function CompraForm({ compra }: { compra?: Compra }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
+              <Label htmlFor="frete">Frete (R$)</Label>
+              <Input
+                id="frete"
+                type="number"
+                step="0.01"
+                min="0"
+                value={frete}
+                onChange={(e) => setFrete(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="data">Data</Label>
               <Input id="data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
             </div>
-            <div className="flex flex-col justify-end">
-              <p className="text-sm text-muted-foreground">
-                Total da compra: <span className="text-foreground">{currencyFormatter.format(valorTotal)}</span>
-              </p>
-            </div>
           </div>
+
+          <p className="text-sm text-muted-foreground">
+            Total da compra (produto + frete): <span className="text-foreground">{currencyFormatter.format(valorTotal)}</span>
+          </p>
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="observacao">Observação</Label>

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
 import { currencyFormatter, dateFormatter } from "@/lib/format";
-import { CompraForm } from "@/components/CompraForm";
+import { ComprasTabs } from "@/components/ComprasTabs";
 import { ExcluirButton } from "@/components/ExcluirButton";
 import type { Compra, Produto } from "@/lib/types";
 
@@ -37,7 +37,7 @@ export default async function ComprasPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h2 className="font-heading mb-6 text-2xl text-foreground">Registrar compra</h2>
-        <CompraForm />
+        <ComprasTabs />
       </div>
 
       <div>
@@ -51,6 +51,7 @@ export default async function ComprasPage() {
                 <TableHead>Produto</TableHead>
                 <TableHead>Quantidade</TableHead>
                 <TableHead>Custo unitário</TableHead>
+                <TableHead>Frete</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead />
               </TableRow>
@@ -64,6 +65,7 @@ export default async function ComprasPage() {
                   </TableCell>
                   <TableCell>{compra.quantidade}</TableCell>
                   <TableCell>{currencyFormatter.format(compra.custo_unitario)}</TableCell>
+                  <TableCell>{currencyFormatter.format(compra.frete)}</TableCell>
                   <TableCell>{currencyFormatter.format(compra.valor_total)}</TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-3">
@@ -88,7 +90,7 @@ export default async function ComprasPage() {
               ))}
               {(compras ?? []).length === 0 && !error && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
                     Nenhuma compra registrada ainda.
                   </TableCell>
                 </TableRow>
