@@ -126,7 +126,7 @@ export function PedidoForm({
     setErro(null);
 
     if (itens.length === 0 || itens.some((item) => !item.produtoId || item.quantidade <= 0)) {
-      setErro("Adicione ao menos um item válido ao pedido.");
+      setErro("Adicione ao menos um item válido à venda.");
       return;
     }
     if (!clienteNovo && !clienteId) {
@@ -186,11 +186,11 @@ export function PedidoForm({
 
       if (erroRpc) {
         setErro(erroRpc.message);
-        toast.error("Erro ao atualizar pedido", { description: erroRpc.message });
+        toast.error("Erro ao atualizar venda", { description: erroRpc.message });
         return;
       }
 
-      toast.success("Pedido atualizado.");
+      toast.success("Venda atualizada.");
       router.push("/pedidos");
       router.refresh();
       return;
@@ -209,9 +209,9 @@ export function PedidoForm({
       .returns<{ id: string }>();
 
     if (erroPedido || !pedidoCriado) {
-      const mensagem = erroPedido?.message ?? "Erro ao registrar pedido.";
+      const mensagem = erroPedido?.message ?? "Erro ao registrar venda.";
       setErro(mensagem);
-      toast.error("Erro ao registrar pedido", { description: mensagem });
+      toast.error("Erro ao registrar venda", { description: mensagem });
       setSalvando(false);
       return;
     }
@@ -232,13 +232,13 @@ export function PedidoForm({
     setSalvando(false);
 
     if (erroItens) {
-      const mensagem = `Pedido criado, mas houve erro ao registrar itens: ${erroItens.message}`;
+      const mensagem = `Venda criada, mas houve erro ao registrar itens: ${erroItens.message}`;
       setErro(mensagem);
-      toast.error("Pedido criado com pendência", { description: mensagem });
+      toast.error("Venda criada com pendência", { description: mensagem });
       return;
     }
 
-    toast.success("Pedido registrado.");
+    toast.success("Venda registrada.");
     router.push("/pedidos");
     router.refresh();
   }
@@ -292,7 +292,7 @@ export function PedidoForm({
           </div>
 
           <div>
-            <p className="mb-2 text-sm text-foreground/80">Itens do pedido</p>
+            <p className="mb-2 text-sm text-foreground/80">Itens da venda</p>
             <div className="flex flex-col gap-2">
               {itens.map((item, index) => (
                 <div key={index} className="grid grid-cols-[1fr_80px_120px_32px] items-center gap-2">
@@ -377,7 +377,7 @@ export function PedidoForm({
           {erro && <p className="text-sm text-destructive">{erro}</p>}
 
           <Button type="submit" disabled={salvando} className="w-fit">
-            {salvando ? "Salvando..." : isEdicao ? "Salvar alterações" : "Registrar pedido"}
+            {salvando ? "Salvando..." : isEdicao ? "Salvar alterações" : "Registrar venda"}
           </Button>
         </form>
       </CardContent>

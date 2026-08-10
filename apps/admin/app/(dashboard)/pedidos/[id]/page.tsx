@@ -28,7 +28,7 @@ export default async function EditarPedidoPage({
 
   return (
     <div>
-      <h2 className="font-heading mb-6 text-2xl text-foreground">Editar pedido</h2>
+      <h2 className="font-heading mb-6 text-2xl text-foreground">Editar venda</h2>
       <PedidoForm pedido={pedido} itensIniciais={itens ?? []} />
     </div>
   );

@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { href: "/categorias", label: "Categorias" },
   { href: "/marcas", label: "Marcas" },
   { href: "/aplicacoes", label: "Aplicações" },
-  { href: "/pedidos", label: "Pedidos" },
+  { href: "/pedidos", label: "Vendas" },
   { href: "/clientes", label: "Clientes" },
   { href: "/compras", label: "Compras" },
   { href: "/financeiro", label: "Financeiro" },

@@ -18,7 +18,7 @@ import type { Cliente } from "@/lib/types";
 // definido de propósito — um cliente com histórico de pedidos não pode ser
 // apagado silenciosamente. Troca a mensagem crua do Postgres por uma clara.
 const MENSAGENS_ERRO_EXCLUSAO_CLIENTE = {
-  "23503": "Este cliente tem pedidos registrados e não pode ser excluído.",
+  "23503": "Este cliente tem vendas registradas e não pode ser excluído.",
 };
 
 export const dynamic = "force-dynamic";

@@ -102,7 +102,7 @@ export default async function RelatoriosPage({
       </form>
 
       <p className="text-sm text-muted-foreground">
-        {resumo.pedidosCount} pedido(s) no período selecionado.
+        {resumo.pedidosCount} venda(s) no período selecionado.
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

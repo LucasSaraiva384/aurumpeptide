@@ -37,13 +37,13 @@ export default async function PedidosPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h2 className="font-heading mb-6 text-2xl text-foreground">Registrar pedido</h2>
+        <h2 className="font-heading mb-6 text-2xl text-foreground">Registrar venda</h2>
         <PedidoForm />
       </div>
 
       <div>
-        <h3 className="font-heading mb-4 text-xl text-foreground">Pedidos recentes</h3>
-        {error && <p className="text-sm text-destructive">Erro ao carregar pedidos: {error.message}</p>}
+        <h3 className="font-heading mb-4 text-xl text-foreground">Vendas recentes</h3>
+        {error && <p className="text-sm text-destructive">Erro ao carregar vendas: {error.message}</p>}
         <div className="rounded-lg border border-border">
           <Table>
             <TableHeader>
@@ -74,8 +74,8 @@ export default async function PedidosPage() {
                       <ExcluirButton
                         tabela="pedidos"
                         id={pedido.id}
-                        titulo="Excluir pedido?"
-                        descricao={`Isso vai excluir o pedido de ${
+                        titulo="Excluir venda?"
+                        descricao={`Isso vai excluir a venda de ${
                           (pedido.cliente_id && nomeClientePorId.get(pedido.cliente_id)) ?? "cliente não identificado"
                         } no valor de ${currencyFormatter.format(
                           pedido.valor_total,
@@ -88,7 +88,7 @@ export default async function PedidosPage() {
               {(pedidos ?? []).length === 0 && !error && (
                 <TableRow>
                   <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
-                    Nenhum pedido registrado ainda.
+                    Nenhuma venda registrada ainda.
                   </TableCell>
                 </TableRow>
               )}

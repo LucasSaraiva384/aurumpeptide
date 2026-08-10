@@ -83,7 +83,7 @@ create or replace function handle_new_pedido()
 returns trigger as $$
 begin
   insert into transacoes (tipo, categoria, valor, pedido_id, descricao)
-    values ('venda', 'venda', new.valor_total, new.id, 'Pedido ' || new.id);
+    values ('venda', 'venda', new.valor_total, new.id, 'Venda ' || new.id);
 
   if new.cliente_id is not null then
     update clientes

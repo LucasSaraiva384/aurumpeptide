@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Aurum Peptide — Painel Admin",
-  description: "Painel interno: estoque, pedidos, clientes e fluxo de caixa.",
+  description: "Painel interno: estoque, vendas, clientes e fluxo de caixa.",
   robots: { index: false, follow: false },
 };
 
