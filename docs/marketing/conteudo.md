@@ -138,3 +138,153 @@ Enviada **antes** da publicação pública, reforçando o acesso prioritário re
 - [x] Designer Manager: executar o carrossel (5 slides) + os 4 stories, conforme briefing acima (Slide 3 = Cenário 2, molécula/silhueta) — concluído 28/07, peças e decisões registradas em `docs/design/pecas.md` e arquivos finais em `docs/design/2026-07-28-tg60mg/final/`. Entregue ao Publishing Manager (ver pendência de stickers nativos do Instagram nos Stories 2 e 4, sinalizada no log).
 - [ ] Publishing Manager: publicar carrossel no Instagram e replicar na página do Facebook, na sequência descrita em "Sequência de publicação recomendada".
 - [ ] Usuário/atendimento: disparar a mensagem do Grupo VIP antes da publicação pública.
+
+---
+
+## 2026-08-05 — Copy de Responsive Search Ad (Google Ads, grupo "Tirzepatida")
+
+### Contexto
+
+Pedido feito pelo Strategic Manager, a pedido do usuário: copy de anúncio de texto (RSA) para o grupo de anúncios "Tirzepatida", parte da primeira campanha de Google Ads da Aurum Peptide (plano completo em `docs/trafego/google-ads.md`, histórico de decisões — incluindo a reversão do pivô institucional de volta à estrutura por produto — em `docs/trafego/campanhas.md`). Este é um entregável de copy pura para o Traffic Manager subir na conta real; não é briefing de peça visual (não há arte nesta entrega) nem publicação.
+
+Dados de catálogo confirmados diretamente no site ao vivo (não usei preço antigo de memória): categoria Tirzepatida tem hoje 4 produtos ativos — Tirzec 60mg (R$1.050), TG 60mg (R$1.000), King Pharma 60mg (R$1.500), ZPHC Tirzepatida 50mg (R$2.450). Landing page: `https://www.aurumpeptide.com.br/produtos?categoria=tirzepatida`.
+
+Palavras-chave do grupo (já definidas em `docs/trafego/google-ads.md`): "tirzepatida comprar", "tirzepatida onde comprar", "comprar tirzepatida original", "onde encontrar tirzepatida" — intenção de compra direta, sem necessidade de educar sobre o que é tirzepatida.
+
+### Headlines (15, máx. 30 caracteres)
+
+1. Tirzepatida Original
+2. Tirzepatida 60mg Aurum
+3. Catálogo Tirzepatida
+4. Tirzepatida | Aurum Peptide
+5. Peptídeos Importados Premium
+6. Procedência Garantida
+7. Portfólio Premium Aurum
+8. Qualidade com Procedência
+9. Compre com Segurança
+10. Compra Segura e Direta
+11. Atendimento Sério e Direto
+12. Seriedade em Cada Compra
+13. Fale com Especialista Aurum
+14. Solicite pelo WhatsApp
+15. Atendimento via WhatsApp
+
+Cobertura: 1–4 nome/categoria do produto; 5–8 proposta de valor real (procedência/qualidade/importado — linguagem coerente com as candidatas institucionais já levantadas em `docs/trafego/google-ads.md`); 9–12 objeção de confiança do avatar (medo de golpe/produto ruim, `docs/avatar-do-cliente.md`), com framing positivo em vez de mencionar "golpe" diretamente; 13–15 CTA clara para o WhatsApp.
+
+### Descriptions (4, máx. 90 caracteres)
+
+1. "Peptídeos com procedência e critério de seriedade. Atendimento direto pelo WhatsApp."
+2. "Cada produto do portfólio Aurum segue o mesmo padrão de seriedade e confiança."
+3. "Fale diretamente com nossa equipe pelo WhatsApp e tire suas dúvidas sem compromisso."
+4. "Linha Tirzepatida no portfólio Aurum, a partir de R$1.000. Fale conosco no WhatsApp."
+
+A description 4 é a única com preço, usando "a partir de R$1.000" (o TG 60mg, o mais barato dos 4 ativos hoje) em vez de fixar um valor único que não reflete os outros 3 produtos da categoria.
+
+### Verificações contra regras da marca
+
+- Nenhuma alegação médica/terapêutica nem promessa de resultado (ex. "emagrecimento garantido") — conforme `docs/tom-de-voz.md` e `docs/valores.md`.
+- Nenhuma urgência artificial ("últimas unidades", "por tempo limitado") — proibido em `docs/valores.md`, também reduz risco de reprovação pela política do Google Ads para "Farmacêuticos e suplementos não aprovados" (`docs/trafego/google-ads.md`, seção "Risco crítico").
+- Landing page confirmada ao vivo no catálogo antes de escrever a copy, não presumida de memória.
+
+### Status
+
+- [x] Copy entregue ao Traffic Manager (via Strategic Manager) para subir na conta real.
+- [ ] Aprovação do usuário antes de ativar.
+- [ ] Revisão de política do Google Ads após publicação — risco de reprovação por "Farmacêuticos e suplementos não aprovados" segue em aberto, só se confirma na prática (ver `docs/trafego/google-ads.md`).
+
+---
+
+## 2026-08-06 — Copy de Responsive Search Ads (Google Ads, grupos "Retatrutida" e "GHK-Cu")
+
+### Contexto
+
+Pedido feito pelo Strategic Manager, a pedido do usuário: expansão da campanha de Google Ads (mesmo plano-base de `docs/trafego/google-ads.md`) para além do grupo "Tirzepatida" (copy já registrada na entrada acima). O plano original tinha adiado Retatrutida e GHK-Cu por hipótese de baixo volume de busca — essa hipótese foi **derrubada por dado real** do Planejador de Palavras-chave do Google Ads: "ghk-cu comprar" mostrou volume surpreendentemente alto (1mil–10mil buscas/mês) e "retatrutida comprar" volume razoável (100–1mil buscas/mês). Por isso o usuário decidiu ativar os dois grupos como linhas separadas, cada uma com seu próprio anúncio — **produtos não são misturados no mesmo anúncio**, mesmo padrão de segmentação por linha já usado em Tirzepatida.
+
+Dados de catálogo confirmados diretamente no site ao vivo (não usei preço de memória):
+
+- **Retatrutida** — landing page `https://www.aurumpeptide.com.br/produtos?categoria=retatrutida`. 4 produtos ativos: Caneta Retatrutide ZPHC 60mg (R$1.500), VELTRANE® Gold Retatrutida 90mg (R$2.300), VELTRANE Diamond Retatrutida 120mg (R$1.500), SYNEDICA Retatrutida 40mg (R$930, o mais barato). Mesma linha de emagrecimento/metabolismo da Tirzepatida (`docs/marca.md`).
+- **GHK-Cu** — landing page `https://www.aurumpeptide.com.br/produtos?categoria=ghk-cu`. Ao menos 4 produtos ativos: Biogenesis® GHK-Cu 100mg (R$499, o mais barato confirmado), Oxygen Pharma® GHK-Cu 100mg (R$750), BYOLOGIK® GHK-Cu 100mg (R$630), NeoPeptides® GHK-Cu 100mg (preço não confirmado — **lacuna sinalizada, não usado na copy**). Linha diferente das duas acima: peptídeo de regeneração/cuidado com a pele, não de emagrecimento — o ângulo da copy foi ajustado para não reutilizar a proposta de valor "emagrecimento/metabolismo" indevidamente neste grupo.
+
+Palavras-chave de cada grupo (já candidatas em `docs/trafego/google-ads.md`, agora ativadas):
+- Retatrutida: "retatrutida comprar", "retatrutida onde comprar", "retatrutida original".
+- GHK-Cu: "ghk-cu comprar", "peptídeo para pele comprar", "peptídeo regenerador de pele".
+
+### Grupo Retatrutida
+
+**Headlines (15, máx. 30 caracteres)**
+
+1. Retatrutida Original
+2. Retatrutida no Portfólio
+3. Catálogo Retatrutida
+4. Retatrutida | Aurum Peptide
+5. Peptídeos Importados Premium
+6. Procedência Garantida
+7. Portfólio Premium Aurum
+8. Qualidade com Procedência
+9. Compre com Segurança
+10. Compra Segura e Direta
+11. Atendimento Sério e Direto
+12. Seriedade em Cada Compra
+13. Fale com Especialista Aurum
+14. Solicite pelo WhatsApp
+15. Atendimento via WhatsApp
+
+Cobertura: 1–4 nome/categoria do produto; 5–8 proposta de valor real (procedência/qualidade/importado, mesma linguagem institucional já validada no grupo Tirzepatida — coerente por ser a mesma linha de emagrecimento/metabolismo); 9–12 objeção de confiança do avatar (medo de golpe/produto ruim, `docs/avatar-do-cliente.md`), com framing positivo; 13–15 CTA clara para o WhatsApp.
+
+**Descriptions (4, máx. 90 caracteres)**
+
+1. "Peptídeos com procedência e critério de seriedade. Atendimento direto pelo WhatsApp."
+2. "Cada produto do portfólio Aurum segue o mesmo padrão de seriedade e confiança."
+3. "Fale diretamente com nossa equipe pelo WhatsApp e tire suas dúvidas sem compromisso."
+4. "Linha Retatrutida no portfólio Aurum, a partir de R$930. Fale conosco no WhatsApp."
+
+A description 4 usa "a partir de R$930" (SYNEDICA 40mg, o mais barato dos 4 ativos hoje), pelo mesmo motivo do grupo Tirzepatida: não fixar valor único que não reflita o portfólio (que vai até R$2.300).
+
+**URL final:** `https://www.aurumpeptide.com.br/produtos?categoria=retatrutida`
+
+### Grupo GHK-Cu
+
+**Headlines (15, máx. 30 caracteres)**
+
+1. GHK-Cu Original
+2. GHK-Cu 100mg Aurum
+3. Catálogo GHK-Cu
+4. GHK-Cu | Aurum Peptide
+5. Peptídeo Regenerador
+6. Peptídeo para Pele
+7. Portfólio Premium Aurum
+8. Qualidade com Procedência
+9. Compre com Segurança
+10. Compra Segura e Direta
+11. Atendimento Sério e Direto
+12. Seriedade em Cada Compra
+13. Fale com Especialista Aurum
+14. Solicite pelo WhatsApp
+15. Atendimento via WhatsApp
+
+Cobertura: 1–4 nome/categoria do produto; **5–6 ângulo específico de regeneração/pele** (substituindo o ângulo de emagrecimento usado em Tirzepatida/Retatrutida — GHK-Cu é uma linha diferente, ver `docs/marca.md`), sem qualquer alegação de efeito ("regeneração"/"pele" aqui descrevem categoria do produto no portfólio, não prometem resultado); 7–8 proposta de valor institucional (procedência/qualidade), compartilhada com os demais grupos por ser um atributo de marca, não de categoria; 9–12 objeção de confiança do avatar; 13–15 CTA para o WhatsApp.
+
+**Descriptions (4, máx. 90 caracteres)**
+
+1. "Peptídeos com procedência e critério de seriedade. Atendimento direto pelo WhatsApp."
+2. "Cada produto do portfólio Aurum segue o mesmo padrão de seriedade e confiança."
+3. "Fale diretamente com nossa equipe pelo WhatsApp e tire suas dúvidas sem compromisso."
+4. "Linha GHK-Cu no portfólio Aurum, a partir de R$499. Fale conosco no WhatsApp."
+
+A description 4 usa "a partir de R$499" (Biogenesis® GHK-Cu 100mg, o mais barato confirmado dos 4 ativos hoje — o preço do NeoPeptides não entrou por não estar confirmado, ver lacuna acima).
+
+**URL final:** `https://www.aurumpeptide.com.br/produtos?categoria=ghk-cu`
+
+### Verificações contra regras da marca (ambos os grupos)
+
+- Nenhuma alegação médica/terapêutica nem promessa de resultado — inclusive no GHK-Cu, onde "regeneração"/"pele" descrevem a categoria do produto no portfólio (fato de composição/classificação), não um efeito prometido, mesmo critério já aplicado ao nome "Tirzepatida" na entrada anterior (`docs/tom-de-voz.md`, `docs/valores.md`).
+- Nenhuma urgência artificial — proibido em `docs/valores.md`, também reduz risco de reprovação pela política do Google Ads para "Farmacêuticos e suplementos não aprovados" (`docs/trafego/google-ads.md`, seção "Risco crítico").
+- Cada grupo tem seu próprio anúncio e landing page — sem misturar produtos/linhas diferentes na mesma copy, por instrução explícita do usuário.
+- Landing pages confirmadas ao vivo no catálogo antes de escrever a copy, não presumidas de memória.
+
+### Status
+
+- [x] Copy dos dois grupos entregue ao Traffic Manager (via Strategic Manager) para subir na conta real.
+- [ ] Aprovação do usuário antes de ativar.
+- [ ] Confirmar preço do NeoPeptides® GHK-Cu 100mg (lacuna aberta) — não bloqueia a ativação, só a menção futura deste produto específico em copy de preço.
+- [ ] Revisão de política do Google Ads após publicação para os dois novos grupos — mesmo risco já sinalizado para o grupo Tirzepatida, ainda não confirmado nem descartado na prática (`docs/trafego/google-ads.md`).

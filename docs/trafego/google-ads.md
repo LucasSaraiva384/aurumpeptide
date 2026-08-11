@@ -60,10 +60,12 @@ Este é o passo mais importante do ponto de vista de dado — sem ele, qualquer 
 
 Recomendo a primeira opção. Ambas dependem do GTM já instalado — nenhuma exige reinstalar tag no site.
 
-- [ ] Alteração de código (dataLayer push) — apoio técnico, pendente.
-- [ ] Trigger + Tag no GTM — usuário (login no GTM), posso orientar passo a passo quando chegar a hora.
-- [ ] Evento marcado como conversão no GA4 — usuário.
-- [ ] Importação da conversão para o Google Ads — usuário, depois do vínculo do passo 3.
+- [x] Alteração de código (dataLayer push) — feito (commit `eb67d50`, deployado). Ver `docs/trafego/campanhas.md`, entradas de 2026-08-05.
+- [x] Trigger + Tag no GTM — feito e confirmado pelo usuário.
+- [x] Evento marcado como conversão no GA4 — feito e confirmado pelo usuário.
+- [x] Importação da conversão para o Google Ads — feito e confirmado pelo usuário.
+
+**Status: rastreamento ponta a ponta confirmado em produção** (evento `whatsapp_click` verificado chegando ao `dataLayer`/GTM ao vivo em `aurumpeptide.com.br`, ver `docs/trafego/campanhas.md`).
 
 ### 5. Estrutura de campanha inicial — ver detalhe na próxima seção. Montada por mim, aprovada pelo usuário antes de ativar.
 
@@ -77,14 +79,17 @@ Sem integração de API para Google Ads ainda, o acompanhamento será manual:
 
 ## Estrutura de campanha recomendada
 
+> **Histórico de idas e voltas nesta seção (2026-08-05), preservado para rastreabilidade — detalhe completo de cada etapa em `docs/trafego/campanhas.md`:**
+> 1. Estrutura original: grupo por produto ("Tirzepatida", termos transacionais tipo "tirzepatida comprar").
+> 2. Pivô para campanha institucional/discreta (grupo "Biotecnologia", sem nome de substância/"comprar") — motivo: preferência de posicionamento de marca do usuário, não risco de política.
+> 3. **Reversão de volta à estrutura original (esta versão), decidida pelo usuário depois de pesar o alerta de volume que dei no pivô** — avaliou que o risco de a campanha institucional não conseguir gastar nem o próprio orçamento diário pesa mais do que a preferência por discrição, e priorizou captar demanda real de compra agora. A estrutura abaixo é, portanto, a mesma da primeira versão, restaurada.
+
 **Tipo de campanha:** Pesquisa (Search). Justificativa: peptídeos são produtos de nicho com busca ativa e intenção explícita ("comprar X", "onde encontrar X") — Pesquisa captura demanda existente, ao contrário de Display/YouTube, que são melhores para criar demanda nova (e têm risco de política ainda maior para este nicho por exibirem criativo visual amplamente, sem controle de contexto de busca). Não recomendo Display/YouTube nesta fase inicial.
 
-> **Atualização 2026-08-05 (orçamento confirmado em R$ 400/mês):** com esse valor, a recomendação abaixo mudou de "várias frentes pequenas" para **uma única campanha enxuta, com 1 grupo de anúncios ativo no início**, para não diluir uma verba já pequena em fatias ainda menores. Detalhes na seção "Orçamento" e no ajuste de grupos de anúncio logo abaixo.
-
 - **Redes:** apenas Rede de Pesquisa. Desmarcar "Incluir parceiros de pesquisa" e Rede de Display no início — controle mais apertado sobre onde o anúncio aparece, importante dado o risco de política, e evita vazar uma verba pequena para inventário de qualidade mais baixa.
-- **Local:** ver seção "Abrangência geográfica" abaixo (decisão delegada ao Traffic Manager pelo usuário em 2026-08-05).
+- **Local:** ver seção "Abrangência geográfica" abaixo — Sudeste + Sul + DF (SP/RJ/MG/PR/SC/RS/DF), decisão confirmada em 2026-08-05, não afetada por nenhuma das mudanças de estrutura.
 - **Idioma:** Português.
-- **Estratégia de lances:** Manual CPC (teto de CPC baixo, ex.: R$ 1,50–R$ 2,50 por clique, a calibrar com o Planejador de Palavras-chave assim que a conta existir) ou "Maximize cliques" com teto de CPC equivalente. Não usar "Maximize conversões"/tROAS ainda — essas estratégias de lance automático precisam de volume de conversão (a própria Google recomenda ~30 conversões/30 dias) que uma conta de R$ 400/mês dificilmente vai atingir rápido; usar lance automático cedo demais tende a gastar mal.
+- **Estratégia de lances:** Manual CPC (teto de CPC baixo, ex.: R$ 1,50–R$ 2,50 por clique, a calibrar com o Planejador de Palavras-chave assim que rodar) ou "Maximize cliques" com teto de CPC equivalente. Não usar "Maximize conversões"/tROAS ainda — essas estratégias de lance automático precisam de volume de conversão (a própria Google recomenda ~30 conversões/30 dias) que uma conta de R$ 400/mês dificilmente vai atingir rápido; usar lance automático cedo demais tende a gastar mal.
 - **Orçamento:** R$ 400/mês confirmado — ver leitura completa na seção "Orçamento" abaixo, incluindo o alerta sobre volume de dado esperado.
 
 ### Grupos de anúncios propostos — ajustado para R$ 400/mês
@@ -92,8 +97,8 @@ Sem integração de API para Google Ads ainda, o acompanhamento será manual:
 Com um orçamento desse tamanho, cobrir as três linhas (Tirzepatida, Retatrutida, GHK-Cu) com peso igual dilui o já pouco tráfego disponível a ponto de nenhuma delas gerar sinal útil rápido. Recomendação: **concentrar no início em uma única linha**, não em três frentes rasas.
 
 1. **Tirzepatida (ad group único, ativo desde o lançamento)** — recomendo começar por aqui porque, por conhecimento geral de mercado (não é dado específico da Aurum, é o fato público de que agonistas GIP/GLP-1 como a tirzepatida tiveram grande exposição de mídia em emagrecimento no Brasil e no mundo), é a linha com maior probabilidade de ter volume de busca suficiente para uma campanha pequena efetivamente gastar o orçamento diário e gerar cliques — ao contrário de termos muito mais estreitos (Retatrutida, GHK-Cu), que arriscam ter volume de busca baixo demais para R$ 13/dia produzirem qualquer clique de forma consistente.
-2. **Retatrutida e GHK-Cu — adiados**, não descartados. Retomar como grupos adicionais quando (a) o orçamento subir, ou (b) o Planejador de Palavras-chave do Google Ads (disponível só depois de criar a conta) confirmar que essas linhas têm volume de busca real que justifique dividir a verba.
-3. **Institucional/Marca — adiado também.** Com verba tão pequena, proteger buscas de marca é menos prioritário do que captar demanda de produto; buscas pelo nome "Aurum Peptide" tendem a ter CPC baixo e podem ser revisitadas depois, sem custar caro para adicionar futuramente.
+2. **Retatrutida e GHK-Cu — adiados**, não descartados. Retomar como grupos adicionais quando (a) o orçamento subir, ou (b) o Planejador de Palavras-chave do Google Ads confirmar que essas linhas têm volume de busca real que justifique dividir a verba.
+3. **Institucional/Marca — adiado também.** Com verba tão pequena, proteger buscas de marca é menos prioritário do que captar demanda de produto; buscas pelo nome "Aurum Peptide" tendem a ter CPC baixo e podem ser revisitadas depois, sem custar caro para adicionar futuramente. (O grupo "Institucional/Biotecnologia" testado no pivô de 2026-08-05 também fica registrado aqui como candidato a retomar futuramente, caso o usuário queira revisitar a discrição mais adiante — ver keywords preservadas abaixo.)
 
 > Antes de finalizar palavras-chave e anúncios, confirmar contra o catálogo real (`aurumpeptide.com.br/produtos`) os nomes exatos de produto e variações de dosagem ativas hoje — não vou inventar SKUs/dosagens específicas aqui sem checar a página ao vivo no momento de montar os anúncios. Também é o momento de rodar o Planejador de Palavras-chave para confirmar/corrigir a hipótese acima sobre volume de busca por linha antes de descartar de vez Retatrutida/GHK-Cu.
 
@@ -108,7 +113,9 @@ Cauda longa e correspondência de frase/exata (não ampla), priorizando termos d
 **Candidatas para quando Retatrutida/GHK-Cu forem retomados** (manter registradas aqui para não perder o trabalho de levantamento, mas não subir agora):
 - Retatrutida: "retatrutida comprar", "retatrutida onde comprar", "retatrutida original"
 - GHK-Cu: "ghk-cu comprar", "peptídeo para pele comprar", "peptídeo regenerador de pele"
-- Institucional: "aurum peptide", "aurum peptide comprar"
+- Institucional/marca: "aurum peptide", "aurum peptide comprar"
+
+**Candidatas institucionais/de categoria (preservadas do pivô de 2026-08-05, revertido — não ativas agora, mas registradas caso o usuário queira retomar o tom mais discreto no futuro, por exemplo como grupo adicional em paralelo depois que houver mais orçamento):** "peptídeos premium importados", "biotecnologia longevidade", "otimização humana peptídeos", "ciência aplicada longevidade", "peptídeos importados alta qualidade", "onde encontrar peptídeos importados", "peptídeos para performance e regeneração".
 
 **Negativas sugeridas (aplicar ao grupo ativo):** "grátis", "download", "pdf", "curso", "bula", "manipulado barato", "manipulação caseira", "receita caseira", "emprego", "vaga", "estudo científico" (termos claramente informacionais/sem intenção de compra, dado que o objetivo é conversão, não tráfego/educação). Ajustar depois de ver os termos de pesquisa reais no relatório de Termos de Pesquisa — não travar a lista aqui como definitiva.
 
@@ -134,6 +141,8 @@ Preciso ser direto sobre isso em vez de tratar o orçamento como "resolvido": **
 Não escondo esse ponto para "parecer resolvido": se a expectativa do usuário for ver resultado/decisão rápida com esse valor, é importante alinhar isso agora. Se o objetivo for validar viabilidade (conta aprovada, rastreamento funcionando, primeira direção de custo) antes de decidir aumentar, R$ 400/mês cumpre esse papel.
 
 Como referência de metodologia (não como número de negócio): a abordagem de "piloto pequeno" descrita na seção de risco acima continua válida mesmo com orçamento recorrente — significa rodar as primeiras semanas monitorando de perto aprovação de anúncio e funcionamento do rastreamento, antes de considerar qualquer aumento, não que o valor em si seja temporário.
+
+> **Nota de rastreabilidade (2026-08-05):** esta leitura foi feita para a estrutura por produto ("tirzepatida comprar" etc.). No mesmo dia, a campanha foi temporariamente redirecionada para termos institucionais (o que teria apertado ainda mais este cenário — ver `docs/trafego/campanhas.md`) e depois revertida de volta para a estrutura por produto acima, justamente por causa do risco de volume que essa mudança institucional teria trazido. A leitura de "~90–270 cliques/mês, 2–3 meses para CPA confiável" acima volta a valer como está, sem o agravante do pivô institucional.
 
 ## Abrangência geográfica
 
@@ -179,12 +188,14 @@ Excluir, nesta fase inicial, segmentação nacional uniforme incluindo regiões 
 
 ## Status
 
-- [ ] Conta Google Ads criada
-- [ ] GA4 vinculado à conta Google Ads
-- [ ] Evento de conversão (clique WhatsApp) configurado e testado (visível em GA4 Realtime)
-- [ ] Conversão importada no Google Ads
-- [ ] Estrutura de campanha revisada e aprovada pelo usuário
-- [ ] Primeira campanha ativada
-- [ ] Primeiro ciclo de anúncios aprovado pela revisão do Google (sem reprovação por política restrita)
+- [x] Conta Google Ads criada (modo Especialista, cartão cadastrado)
+- [x] GA4 vinculado à conta Google Ads
+- [x] Evento de conversão (clique WhatsApp) configurado e testado (confirmado em produção via `dataLayer`/GTM)
+- [x] Conversão importada no Google Ads
+- [x] Rodar Planejador de Palavras-chave — feito em 2026-08-06, dado real confirmou volume maior que o esperado para Retatrutida e GHK-Cu (ver `docs/trafego/campanhas.md`, entrada 2026-08-06) — expandiu a estrutura para 3 grupos de anúncios.
+- [x] Campanha "Tirzepatida - Pesquisa" criada, com 3 grupos (Tirzepatida, Retatrutida, GHK-Cu), keywords em correspondência de frase, 11 negativas de campanha, orçamento/geo/idioma/lances configurados — **mantida em pausa**.
+- [ ] **Bloqueio ativo:** conta pede verificação de identidade (prazo 20/08/2026) para salvar qualquer anúncio de pesquisa responsivo — nenhum anúncio foi criado ainda em nenhum grupo. Ação do usuário, não automatizável. Copy dos 3 grupos já pronta em `docs/marketing/conteudo.md`.
+- [ ] Primeira campanha ativada — só depois da verificação + criação dos anúncios + revisão do usuário.
+- [ ] Primeiro ciclo de anúncios aprovado pela revisão do Google (sem reprovação por política restrita).
 
 Atualizar os checkboxes conforme cada etapa for concluída, e registrar decisões/ajustes de campanha em `docs/trafego/campanhas.md` a partir do lançamento.
