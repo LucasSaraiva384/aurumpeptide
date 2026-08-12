@@ -67,9 +67,13 @@ Um System User "Admin" tem acesso amplo ao Business Manager, não só aos três 
 
 ## Status
 
-- [x] App criado em developers.facebook.com
-- [ ] System User criado e ativos atribuídos — **bloqueado**: conta do usuário está com uma restrição do Meta até 08/08/2026, impedindo continuar a configuração até lá.
-- [ ] Token gerado e `.env` preenchido
-- [ ] Conexão testada (`GET /me` retornando com sucesso)
+- [x] App criado em developers.facebook.com (Aurum A.I, ID 1030802509356236) e conectado ao Business Manager "BM - Gestor" (business_id 140419798989866)
+- [x] System User criado (`aurum-agentes`, papel Admin) e ativos atribuídos (Página Aurum Peptide, conta de anúncios CA-Aurum, Instagram @aurumpeptide, app Aurum A.I)
+- [x] Token gerado (sem expiração) e `.env` preenchido (`META_ACCESS_TOKEN`, `META_AD_ACCOUNT_ID`, `META_PAGE_ID`, `META_IG_BUSINESS_ACCOUNT_ID`, `META_BUSINESS_ID`) — 2026-08-11
+- [x] Conexão testada (`GET /me` retornando com sucesso) — também verificado acesso à Página, ao Instagram e à conta de anúncios individualmente, todos OK — 2026-08-11
+
+**Integração completa e funcional.** `traffic-manager`, `publishing-manager` e `analytics-manager` já podem chamar `scripts/meta_graph.py` diretamente contra a conta real da Aurum Peptide.
+
+**Nota para uso no Git Bash (Windows):** o Git Bash converte automaticamente argumentos começando com `/` (como `/me`) em caminhos de arquivo Windows, quebrando a chamada. Rode com `MSYS_NO_PATHCONV=1` na frente do comando, ex.: `MSYS_NO_PATHCONV=1 python scripts/meta_graph.py get /me`.
 
 Atualize os checkboxes conforme cada etapa for concluída.
