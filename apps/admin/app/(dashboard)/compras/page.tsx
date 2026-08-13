@@ -12,13 +12,13 @@ import { createClient } from "@/lib/supabase/server";
 import { currencyFormatter, dateFormatter } from "@/lib/format";
 import { ComprasTabs } from "@/components/ComprasTabs";
 import { ExcluirButton } from "@/components/ExcluirButton";
-import type { Compra, Produto } from "@/lib/types";
+import type { Compra, Produto, Transacao } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function ComprasPage() {
   const supabase = await createClient();
-  const [{ data: compras, error }, { data: produtos }] = await Promise.all([
+  const [{ data: compras, error }, { data: produtos }, { data: gastos, error: erroGastos }] = await Promise.all([
     supabase
       .from("compras")
       .select("*")
@@ -27,6 +27,19 @@ export default async function ComprasPage() {
       .limit(50)
       .returns<Compra[]>(),
     supabase.from("produtos").select("id, nome").returns<Pick<Produto, "id" | "nome">[]>(),
+    // "Outro gasto" (aba da ComprasTabs) grava direto em transacoes (tipo
+    // despesa, mesma tabela/form de Financeiro > Despesas) — sem produto
+    // nem vínculo com compras, por isso não aparece na query de compras
+    // acima. Mostrado aqui à parte pra quem lança pela aba de Compras não
+    // perder de vista que o gasto foi registrado.
+    supabase
+      .from("transacoes")
+      .select("*")
+      .eq("tipo", "despesa")
+      .order("data", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(10)
+      .returns<Transacao[]>(),
   ]);
 
   // Join feito em JS (mesmo padrão de pedidos/page.tsx) para manter o tipo
@@ -92,6 +105,45 @@ export default async function ComprasPage() {
                 <TableRow>
                   <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
                     Nenhuma compra registrada ainda.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-heading text-xl text-foreground">Outros gastos recentes</h3>
+          <Link href="/financeiro/despesas" className="text-sm text-aurum-gold hover:underline">
+            Ver todas em Financeiro → Despesas
+          </Link>
+        </div>
+        {erroGastos && <p className="text-sm text-destructive">Erro ao carregar gastos: {erroGastos.message}</p>}
+        <div className="rounded-lg border border-border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Valor</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(gastos ?? []).map((gasto) => (
+                <TableRow key={gasto.id}>
+                  <TableCell>{dateFormatter.format(new Date(`${gasto.data}T00:00:00`))}</TableCell>
+                  <TableCell className="text-muted-foreground">{gasto.categoria ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{gasto.descricao ?? "—"}</TableCell>
+                  <TableCell>{currencyFormatter.format(gasto.valor)}</TableCell>
+                </TableRow>
+              ))}
+              {(gastos ?? []).length === 0 && !erroGastos && (
+                <TableRow>
+                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                    Nenhum gasto avulso registrado ainda.
                   </TableCell>
                 </TableRow>
               )}
