@@ -176,6 +176,11 @@ export type Compra = {
   data: string;
   observacao: string | null;
   created_at: string;
+  // grupo_compra_id: tag opcional (supabase/compras-grupo.sql) que marca
+  // produtos lançados juntos no mesmo envio do formulário (múltiplos
+  // produtos, 1 frete só na primeira linha do grupo). Null em compras
+  // avulsas/antigas — cada linha continua sendo 1 produto independente.
+  grupo_compra_id: string | null;
 };
 
 export type Retirada = {
@@ -338,7 +343,7 @@ export type Database = {
         Row: Compra;
         // valor_total não entra no Insert: é coluna gerada pelo Postgres.
         // frete é opcional: o banco tem default 0.
-        Insert: Partial<Pick<Compra, "id" | "frete" | "data" | "observacao" | "created_at">> &
+        Insert: Partial<Pick<Compra, "id" | "frete" | "data" | "observacao" | "created_at" | "grupo_compra_id">> &
           Pick<Compra, "produto_id" | "quantidade" | "custo_unitario">;
         Update: Partial<Compra>;
         Relationships: [];

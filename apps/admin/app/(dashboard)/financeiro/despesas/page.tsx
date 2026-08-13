@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,6 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { currencyFormatter, dateFormatter } from "@/lib/format";
 import { DespesaForm } from "@/components/DespesaForm";
+import { ExcluirButton } from "@/components/ExcluirButton";
 import type { Transacao } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +55,7 @@ export default async function DespesasPage() {
                 <TableHead>Categoria</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Valor</TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -62,11 +65,28 @@ export default async function DespesasPage() {
                   <TableCell className="text-muted-foreground">{despesa.categoria ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{despesa.descricao ?? "—"}</TableCell>
                   <TableCell>{currencyFormatter.format(despesa.valor)}</TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-3">
+                      <Link href={`/financeiro/despesas/${despesa.id}`}>
+                        <Button variant="outline" size="sm">
+                          Editar
+                        </Button>
+                      </Link>
+                      <ExcluirButton
+                        tabela="transacoes"
+                        id={despesa.id}
+                        titulo="Excluir despesa?"
+                        descricao={`Isso vai remover ${currencyFormatter.format(
+                          despesa.valor,
+                        )} (${despesa.categoria ?? "sem categoria"}) do financeiro. Esta ação não pode ser desfeita.`}
+                      />
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
               {(despesas ?? []).length === 0 && !error && (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
                     Nenhuma despesa registrada ainda.
                   </TableCell>
                 </TableRow>

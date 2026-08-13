@@ -9,15 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
+import type { Transacao } from "@/lib/types";
 
 const CATEGORIAS_SUGERIDAS = ["Fornecedores", "Marketing", "Frete", "Embalagens", "Impostos", "Outro"];
 
-export function DespesaForm() {
+export function DespesaForm({ despesa }: { despesa?: Transacao }) {
   const router = useRouter();
-  const [categoria, setCategoria] = useState(CATEGORIAS_SUGERIDAS[0]!);
-  const [valor, setValor] = useState("");
-  const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
-  const [descricao, setDescricao] = useState("");
+  const isEdicao = Boolean(despesa);
+  const [categoria, setCategoria] = useState(despesa?.categoria ?? CATEGORIAS_SUGERIDAS[0]!);
+  const [valor, setValor] = useState(despesa ? String(despesa.valor) : "");
+  const [data, setData] = useState(() => despesa?.data ?? new Date().toISOString().slice(0, 10));
+  const [descricao, setDescricao] = useState(despesa?.descricao ?? "");
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -32,6 +34,31 @@ export function DespesaForm() {
 
     setSalvando(true);
     const supabase = createClient();
+
+    if (isEdicao) {
+      const { error } = await supabase
+        .from("transacoes")
+        .update({
+          categoria,
+          valor: Number(valor),
+          data,
+          descricao: descricao || null,
+        })
+        .eq("id", despesa!.id);
+
+      setSalvando(false);
+
+      if (error) {
+        setErro(error.message);
+        toast.error("Erro ao atualizar despesa", { description: error.message });
+        return;
+      }
+
+      toast.success("Despesa atualizada.");
+      router.push("/financeiro/despesas");
+      router.refresh();
+      return;
+    }
 
     const { error } = await supabase.from("transacoes").insert({
       tipo: "despesa",
@@ -102,7 +129,7 @@ export function DespesaForm() {
           {erro && <p className="text-sm text-destructive">{erro}</p>}
 
           <Button type="submit" disabled={salvando} className="w-fit">
-            {salvando ? "Registrando..." : "Registrar despesa"}
+            {salvando ? "Salvando..." : isEdicao ? "Salvar alterações" : "Registrar despesa"}
           </Button>
         </form>
       </CardContent>

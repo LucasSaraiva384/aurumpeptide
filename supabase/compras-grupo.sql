@@ -1,0 +1,23 @@
+-- Aurum Peptide — agrupamento leve de compras (múltiplos produtos, 1 frete).
+--
+-- Como aplicar: Supabase Dashboard > SQL Editor > New query, cole e rode
+-- este arquivo inteiro (mesmo fluxo usado para os outros arquivos em
+-- supabase/). Só ALTER TABLE ADD COLUMN aditivo — nenhuma tabela, trigger
+-- ou função existente é alterada, e nenhuma compra histórica muda de valor.
+--
+-- Como funciona: quando o usuário lança N produtos numa mesma compra (aba
+-- "Compra de produto" do CompraForm, formulário com "+ adicionar produto"),
+-- o frontend gera um uuid client-side e grava esse mesmo grupo_compra_id em
+-- todas as N linhas inseridas em `compras` — cada linha continua sendo 1
+-- produto, exatamente como já era antes, só que agora com uma tag opcional
+-- que diz "essas linhas vieram do mesmo envio de formulário". Nenhum
+-- trigger/RPC (handle_new_compra, recompute_produto_estoque_custo,
+-- atualizar_compra) e nenhuma agregação financeira (lib/finance.ts) precisa
+-- saber que essa coluna existe — todos continuam operando linha a linha,
+-- como sempre. compras/page.tsx usa grupo_compra_id só para agrupar
+-- visualmente as linhas na listagem.
+--
+-- Compras já existentes (antes desta migration) ficam com
+-- grupo_compra_id = null — continuam aparecendo normalmente, sem nenhum
+-- agrupamento visual (comportamento idêntico ao de hoje).
+alter table compras add column if not exists grupo_compra_id uuid;

@@ -101,3 +101,32 @@ Nenhum trigger de INSERT/UPDATE existente (da leva de edição ou de `erp.sql`/`
 ### Pendências / próximos passos (exclusão)
 
 - Depois de rodar a seção nova de `supabase/edicoes.sql` no SQL Editor (o arquivo é cumulativo — rodar o arquivo inteiro de novo é seguro, todos os `create`/`alter` novos usam `create or replace`/`if not exists`/`if exists` onde relevante, exceto as duas `create function`/`create trigger` novas desta leva, que falhariam num segundo `run` se o arquivo inteiro já tivesse sido aplicado — nesse caso, rodar só a seção "Exclusão" a partir do comentário `-- Exclusão de pedidos, compras e clientes`), testar manualmente: apagar uma compra e conferir que estoque/custo médio do produto recalculam e a transação some do financeiro; apagar um pedido e conferir que o estoque volta, a transação de venda some e as estatísticas do cliente recalculam; tentar apagar um cliente com pedidos e confirmar a mensagem amigável (depois apagar um cliente sem pedidos e confirmar que funciona).
+
+---
+
+## Compras com múltiplos produtos — "grupo leve" (2026-08-13)
+
+> Pedido do usuário: ele sempre compra 3+ produtos do mesmo fornecedor de uma vez, pagando um frete só, e queria lançar isso numa única operação em vez de repetir o formulário de compra produto a produto (o que também tornava fácil "perder" o frete — problema real que apareceu nesta mesma conversa antes desta feature).
+
+### Decisão: não reestruturar `compras` em cabeçalho + itens
+
+Duas arquiteturas foram avaliadas com o usuário, com preview visual de cada uma:
+
+1. **Cabeçalho + itens**, replicando `pedidos`/`pedido_itens`: uma compra vira uma entidade só (data/frete/observação no cabeçalho, N produtos como itens), com edição/exclusão em nível de compra inteira. Mais fiel ao conceito, mas exigiria renomear a tabela `compras` existente, migrar as compras já reais em produção pro novo formato, relincar `transacoes.compra_id` e reescrever `recompute_produto_estoque_custo`/`atualizar_compra`/os triggers de compra — mexendo na estrutura dos dados financeiros já existentes.
+2. **Grupo leve** (escolhida): `compras` continua exatamente como é — 1 linha por produto — e ganha só uma coluna opcional `grupo_compra_id uuid null` que marca linhas lançadas juntas no mesmo envio do formulário.
+
+O usuário escolheu a opção 2: preferiu risco zero sobre os dados reais já existentes a ter edição/exclusão em nível de "compra inteira".
+
+### Como funciona
+
+- `supabase/compras-grupo.sql`: `alter table compras add column if not exists grupo_compra_id uuid;` — aditivo, sem rename, sem backfill. Compras antigas ficam com `grupo_compra_id = null` e continuam aparecendo normalmente.
+- Nenhum trigger, RPC ou agregação financeira existente (`handle_new_compra`, `recompute_produto_estoque_custo`, `atualizar_compra`, `lib/finance.ts`) foi alterado — todos continuam vendo compras linha a linha, do jeito que sempre viram. `grupo_compra_id` é só uma tag de exibição.
+- **Frete do grupo**: lançado inteiro na 1ª linha inserida do grupo; as demais ficam com `frete = 0`. Evita contar o mesmo frete duas vezes no ledger (cada linha já soma certinho via o trigger de sempre, sem precisar dividir/ratear nada).
+- **Criação** (`components/CompraForm.tsx`, modo não-edição): virou lista de itens (`+ adicionar produto`, mesmo padrão de `PedidoForm.tsx`), com frete/data/observação como campos únicos no topo. No submit, gera um `crypto.randomUUID()` client-side (só quando há mais de 1 item) e insere todas as linhas numa única chamada `supabase.from("compras").insert([...])`, cada uma já com o `grupo_compra_id` compartilhado.
+- **Edição continua por produto**, sem nenhuma mudança: `CompraForm` em modo edição (`compra` prop presente) usa exatamente os mesmos campos escalares e a mesma RPC `atualizar_compra` de sempre.
+- **Listagem** (`app/(dashboard)/compras/page.tsx`): agrupa visualmente as linhas com o mesmo `grupo_compra_id` (função `agruparCompras`, agrupa por id em vez de assumir adjacência no resultado da query, já que linhas do mesmo grupo têm `created_at` idêntico e a ordenação não garante uma ordem relativa entre elas). Linhas de um grupo ganham uma borda esquerda sutil, a célula Frete mostra "—" nas linhas com frete 0 dentro de um grupo (em vez de "R$ 0,00", pra deixar claro que o frete está em outra linha do mesmo grupo) e uma linha de legenda abaixo do grupo mostra o frete total lançado. Ao excluir a linha que carrega o frete do grupo, o diálogo de confirmação avisa que as outras linhas do grupo não têm frete próprio.
+
+### Fora de escopo (decidido com o usuário)
+
+- Edição/exclusão em nível de grupo (continuam por produto, como sempre foram).
+- Divisão do frete proporcional entre os itens — fica inteiro na primeira linha por simplicidade (a soma total continua correta de qualquer forma).
