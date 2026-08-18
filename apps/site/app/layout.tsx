@@ -45,9 +45,16 @@ export const metadata: Metadata = {
     description: DESCRICAO_PADRAO,
     images: [OG_IMAGE],
   },
-  ...(GOOGLE_SITE_VERIFICATION
-    ? { verification: { google: GOOGLE_SITE_VERIFICATION } }
-    : {}),
+  verification: {
+    ...(GOOGLE_SITE_VERIFICATION ? { google: GOOGLE_SITE_VERIFICATION } : {}),
+    // Verificação de propriedade do domínio para o Business Manager da Meta
+    // (Configurações da empresa > Domínios) — necessária para a Verificação
+    // da Empresa liberar recursos avançados (ex.: webhook de produção do
+    // WhatsApp Business em apps desenvolvidos ainda não publicados).
+    other: {
+      "facebook-domain-verification": "bvn0a9z1o1wkjlgcw6tj4fs6378bz9",
+    },
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
