@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Container, ButtonLink, Divider } from "@aurum/ui";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { WhatsappButtonLink } from "@/components/WhatsappButtonLink";
@@ -45,6 +46,12 @@ export function Footer() {
         <p className="text-[0.6rem] tracking-[0.1em] text-aurum-ice/30">
           Aurum Peptide é operada por 50.701.764 LUCAS VINICIUS LISBOA SARAIVA — CNPJ 50.701.764/0001-82
         </p>
+        <Link
+          href="/politica-de-privacidade"
+          className="text-[0.6rem] uppercase tracking-[0.2em] text-aurum-ice/40 underline underline-offset-4 hover:text-aurum-gold"
+        >
+          Política de Privacidade
+        </Link>
       </Container>
     </footer>
   );
