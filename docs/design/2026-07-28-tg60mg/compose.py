@@ -12,6 +12,7 @@ FONTS = r"C:\Windows\Fonts"
 
 GOLD = (198, 165, 90)
 ICE_WHITE = (238, 236, 228)
+GOLD_DIM = (168, 140, 78)  # dourado levemente mais discreto, para rodape/fonte (adicionado 2026-08-17, mesma cor do carrossel 12/08)
 
 FEED_W, FEED_H = 1080, 1350
 STORY_W, STORY_H = 1080, 1920
@@ -200,25 +201,70 @@ def slide3():
 
 
 # ---------------------------------------------------------------------------
-# SLIDE 4 -- Preco e acesso
+# SLIDE 4 -- Tirzepatida: o que a evidencia mostra
 # ---------------------------------------------------------------------------
+# Recomposto em 2026-08-17 por nova diretriz permanente (docs/tom-de-voz.md,
+# "Posts de produto no Instagram/Facebook -- nunca preco nem 'disponivel para
+# venda'"): sai o tratamento de "numero grande" do preco, entra o mesmo
+# tratamento de corpo de texto + rodape discreto ja usado na Pagina 4 do
+# carrossel de 12/08 (docs/design/2026-08-12-carrossel-evidencia/compose.py,
+# funcao pagina4()) -- titulo serif dourado, corpo sans-serif em bloco
+# centralizado, rodape pequeno para fonte/disclaimer. Mesmo fundo, mesma
+# marca d'agua da molecula (8% opacidade), nada de numeral gigante.
+# Copy exata: docs/marketing/conteudo.md, entrada 2026-07-28, secao
+# "Correcao pos-nova-diretriz (2026-08-17)".
 def slide4():
     img = new_canvas(FEED_W, FEED_H)
     paste_rgba(img, molecule, FEED_W / 2, FEED_H / 2, target_w=480, opacity=0.08)
     draw = ImageDraw.Draw(img)
 
-    f_title = font(TITLE_FONT, 84)
-    title = "R$ 1.200"
-    w = draw.textlength(title, font=f_title)
-    draw.text(((FEED_W - w) / 2, 540), title, font=f_title, fill=GOLD)
+    def lines_height(lines, fnt, gap):
+        h = 0
+        for line in lines:
+            bbox = fnt.getbbox(line) if line else (0, 0, 0, fnt.size)
+            h += (bbox[3] - bbox[1]) + gap
+        return h
 
-    f_body = font(BODY_FONT, 38)
+    # Titulo
+    f_title = font(TITLE_FONT, 50)
+    title = "Tirzepatida: o que a evidência mostra"
+    title_lines = wrap_text(draw, title, f_title, FEED_W - 180)
+    y = 96
+    y = draw_multiline_centered(draw, title_lines, f_title, GOLD, FEED_W, y, 12)
+    y += 34
+
+    # Corpo
+    f_body = font(BODY_FONT, 33)
     body = (
-        "Disponível para clientes Aurum. Informações completas e orientação, "
-        "diretamente com a nossa equipe."
+        "Tirzepatida é uma das moléculas de sua classe com maior nível de "
+        "comprovação científica até hoje: aprovada por agências regulatórias "
+        "internacionais — FDA, nos Estados Unidos, e ANVISA, no Brasil — e "
+        "avaliada no maior estudo clínico de fase 3 já publicado sobre o "
+        "tema, controlado por placebo e multicêntrico em 9 países, "
+        "incluindo centros no Brasil, com mais de 2.500 participantes."
     )
-    lines = wrap_text(draw, body, f_body, FEED_W - 240)
-    draw_multiline_centered(draw, lines, f_body, ICE_WHITE, FEED_W, 700, 16)
+    body_lines = wrap_text(draw, body, f_body, FEED_W - 220)
+    body_h = lines_height(body_lines, f_body, 14)
+
+    # Rodape (fonte + disclaimer)
+    f_footer = font(BODY_FONT_LIGHT, 21)
+    footer = (
+        "Fonte: estudo publicado em periódico científico revisado por "
+        "pares, indexado no PubMed/NIH (SURMOUNT-1, New England Journal of "
+        "Medicine, 2022). Este conteúdo é informativo, não constitui "
+        "indicação de uso e não substitui avaliação de profissional de "
+        "saúde habilitado."
+    )
+    footer_lines = wrap_text(draw, footer, f_footer, FEED_W - 260)
+    footer_h = lines_height(footer_lines, f_footer, 8)
+    footer_y = FEED_H - 90 - footer_h
+
+    # Centraliza o bloco do corpo no espaco disponivel entre titulo e rodape
+    available_bottom = footer_y - 40
+    body_y = y + max(0, (available_bottom - y - body_h) / 2)
+
+    draw_multiline_centered(draw, body_lines, f_body, ICE_WHITE, FEED_W, body_y, 14)
+    draw_multiline_centered(draw, footer_lines, f_footer, GOLD_DIM, FEED_W, footer_y, 8)
 
     save(img, "slide-4-preco.png")
     return img
