@@ -15,11 +15,15 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aurumpeptide.com.b
 
 // Texto aprovado pelo Marketing Manager e pelo usuário — não alterar sem
 // nova aprovação.
-const MENSAGEM_BOAS_VINDAS = `Olá, seja bem-vindo(a) à Aurum Peptide.
-Recebemos sua mensagem e, em instantes, alguém da nossa equipe dará continuidade ao seu atendimento.
-Enquanto isso, fica o convite para o nosso Grupo VIP no WhatsApp — conteúdo exclusivo e atendimento prioritário: https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb?s=cl&p=i&mlu=0
-Conheça também o portfólio completo em nosso site: https://aurumpeptide.com.br
-Na sequência, enviamos a tabela de preços atualizada em PDF.`;
+const MENSAGEM_BOAS_VINDAS = `Olá! 👋 Seja bem-vindo(a) à Aurum Peptide.
+
+Em instantes, alguém da nossa equipe continua seu atendimento por aqui.
+
+Enquanto isso, entra no nosso Grupo VIP 💛 — conteúdo exclusivo e atendimento prioritário: https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb?s=cl&p=i&mlu=0
+
+Conheça também nosso site: https://aurumpeptide.com.br
+
+Já já mandamos a tabela de preços em PDF 📄`;
 
 // -- Payload do webhook da Meta (só os campos usados aqui) --
 // https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/payload-examples
