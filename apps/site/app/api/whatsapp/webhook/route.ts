@@ -12,6 +12,10 @@ const META_WHATSAPP_PHONE_NUMBER_ID = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
 const META_APP_SECRET = process.env.META_APP_SECRET;
 const WHATSAPP_WEBHOOK_VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aurumpeptide.com.br";
+// URL do webhook do Chatwoot (self-hosted) pra onde espelhamos o payload bruto
+// da Meta — mantém a automação de boas-vindas aqui, e alimenta o Chatwoot em
+// paralelo pra monitoramento/resposta manual. Ver docs/publicacao/log.md.
+const CHATWOOT_WHATSAPP_WEBHOOK_URL = process.env.CHATWOOT_WHATSAPP_WEBHOOK_URL;
 
 // Texto aprovado pelo Marketing Manager e pelo usuário — não alterar sem
 // nova aprovação.
@@ -86,12 +90,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // Qualquer erro de processamento é logado, nunca propagado.
   try {
     const payload = JSON.parse(corpoBruto) as MetaWebhookPayload;
-    await processarPayload(payload);
+    await Promise.all([processarPayload(payload), repassarParaChatwoot(corpoBruto)]);
   } catch (erro) {
     console.error("[whatsapp/webhook] erro ao processar payload:", erro);
   }
 
   return NextResponse.json({ success: true });
+}
+
+/**
+ * Espelha o payload bruto (mesmo formato que a Meta manda) pro webhook do
+ * Chatwoot self-hosted, pra alimentar a inbox de monitoramento/resposta
+ * manual. Nunca lança — uma falha aqui não pode impedir a automação de
+ * boas-vindas acima de rodar.
+ */
+async function repassarParaChatwoot(corpoBruto: string): Promise<void> {
+  if (!CHATWOOT_WHATSAPP_WEBHOOK_URL) return;
+
+  try {
+    const resposta = await fetch(CHATWOOT_WHATSAPP_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: corpoBruto,
+    });
+
+    if (!resposta.ok) {
+      console.error(`[whatsapp/webhook] Chatwoot respondeu ${resposta.status} ao repasse`);
+    }
+  } catch (erro) {
+    console.error("[whatsapp/webhook] erro ao repassar para o Chatwoot:", erro);
+  }
 }
 
 function validarAssinatura(corpoBruto: string, headerAssinatura: string | null): boolean {
