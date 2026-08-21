@@ -22,6 +22,12 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aurumpeptide.com.b
 // da Meta — mantém a automação de boas-vindas aqui, e alimenta o Chatwoot em
 // paralelo pra monitoramento/resposta manual. Ver docs/publicacao/log.md.
 const CHATWOOT_WHATSAPP_WEBHOOK_URL = process.env.CHATWOOT_WHATSAPP_WEBHOOK_URL;
+// API do Chatwoot — só pra registrar confirmação de envio como nota privada
+// (nunca reenvia de verdade). Ver registrarConfirmacaoNoChatwoot.
+const CHATWOOT_BASE_URL = process.env.CHATWOOT_BASE_URL;
+const CHATWOOT_API_ACCESS_TOKEN = process.env.CHATWOOT_API_ACCESS_TOKEN;
+const CHATWOOT_ACCOUNT_ID = process.env.CHATWOOT_ACCOUNT_ID;
+const CHATWOOT_INBOX_ID = process.env.CHATWOOT_INBOX_ID;
 
 // Sequência de boas-vindas aprovada pelo usuário em 2026-08-21 — 3 mensagens
 // separadas (ver DELAY_ENTRE_MENSAGENS_MS), não alterar sem nova aprovação.
@@ -255,28 +261,33 @@ async function registrarMensagem(
 
 /**
  * Envia a sequência de boas-vindas (3 mensagens de texto espaçadas por
- * DELAY_ENTRE_MENSAGENS_MS + tabela de preços em PDF) e marca o contato como
- * atendido ao final, mesmo que algum envio tenha falhado no meio (cada envio
- * é isolado — falha em um não impede os seguintes — e evita reenvio em loop
- * a cada nova mensagem da mesma pessoa; uma falha pontual significa que essa
- * pessoa não recebeu um dos envios).
+ * DELAY_ENTRE_MENSAGENS_MS + tabela de preços em PDF), marca o contato como
+ * atendido e registra no Chatwoot uma nota privada confirmando o que foi
+ * enviado — mesmo que algum envio tenha falhado no meio (cada envio é
+ * isolado — falha em um não impede os seguintes — e evita reenvio em loop a
+ * cada nova mensagem da mesma pessoa; uma falha pontual significa que essa
+ * pessoa não recebeu um dos envios, refletido na nota do Chatwoot).
  */
 async function enviarBoasVindas(waId: string): Promise<void> {
-  await enviarMensagemTexto(waId, MENSAGEM_1_BOAS_VINDAS);
+  const resultados: boolean[] = [];
+
+  resultados.push(await enviarMensagemTexto(waId, MENSAGEM_1_BOAS_VINDAS));
   await esperar(DELAY_ENTRE_MENSAGENS_MS);
-  await enviarMensagemTexto(waId, MENSAGEM_2_GRUPO_VIP);
+  resultados.push(await enviarMensagemTexto(waId, MENSAGEM_2_GRUPO_VIP));
   await esperar(DELAY_ENTRE_MENSAGENS_MS);
-  await enviarMensagemTexto(waId, MENSAGEM_3_TABELA_PRECOS);
+  resultados.push(await enviarMensagemTexto(waId, MENSAGEM_3_TABELA_PRECOS));
   await esperar(DELAY_ENTRE_MENSAGENS_MS);
-  await enviarTabelaPrecos(waId);
+  resultados.push(await enviarTabelaPrecos(waId));
+
   await marcarBoasVindasEnviada(waId);
+  await registrarConfirmacaoNoChatwoot(waId, resultados);
 }
 
 function esperar(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function enviarMensagemTexto(waId: string, texto: string): Promise<void> {
+async function enviarMensagemTexto(waId: string, texto: string): Promise<boolean> {
   try {
     const waMessageId = await chamarGraphApiMensagens({
       messaging_product: "whatsapp",
@@ -285,12 +296,14 @@ async function enviarMensagemTexto(waId: string, texto: string): Promise<void> {
       text: { body: texto },
     });
     await registrarMensagem(waId, "enviada", "text", texto, waMessageId);
+    return true;
   } catch (erro) {
     console.error("[whatsapp/webhook] erro ao enviar mensagem de texto:", erro);
+    return false;
   }
 }
 
-async function enviarTabelaPrecos(waId: string): Promise<void> {
+async function enviarTabelaPrecos(waId: string): Promise<boolean> {
   const linkPdf = `${SITE_URL}/tabela-aurum-peptide.pdf`;
   try {
     const waMessageId = await chamarGraphApiMensagens({
@@ -304,9 +317,89 @@ async function enviarTabelaPrecos(waId: string): Promise<void> {
       },
     });
     await registrarMensagem(waId, "enviada", "document", linkPdf, waMessageId);
+    return true;
   } catch (erro) {
     console.error("[whatsapp/webhook] erro ao enviar tabela de preços:", erro);
+    return false;
   }
+}
+
+const ROTULOS_CONFIRMACAO_CHATWOOT = [
+  "Mensagem 1 (boas-vindas)",
+  "Mensagem 2 (Grupo VIP)",
+  "Mensagem 3 (tabela de preços)",
+  "PDF (tabela de preços)",
+];
+
+type ChatwootContatoBusca = { payload?: { id: number }[] };
+type ChatwootConversa = { id: number; inbox_id: number };
+type ChatwootConversasResposta = { payload?: ChatwootConversa[] };
+
+/**
+ * Registra, como nota privada na conversa do Chatwoot (nunca dispara reenvio
+ * real ao cliente — sempre `private: true`), um resumo de quais mensagens da
+ * sequência de boas-vindas foram enviadas com sucesso. Só existe pra dar
+ * visibilidade ao atendente de que a automação rodou; falha aqui nunca deve
+ * afetar o fluxo de envio real, então é sempre best-effort.
+ */
+async function registrarConfirmacaoNoChatwoot(waId: string, resultados: boolean[]): Promise<void> {
+  if (!CHATWOOT_BASE_URL || !CHATWOOT_API_ACCESS_TOKEN || !CHATWOOT_ACCOUNT_ID) return;
+
+  try {
+    const conversationId = await buscarConversaChatwoot(waId);
+    if (!conversationId) return;
+
+    const linhas = ROTULOS_CONFIRMACAO_CHATWOOT.map(
+      (rotulo, indice) => `${resultados[indice] ? "✅" : "❌"} ${rotulo}`,
+    );
+    const sucesso = resultados.filter(Boolean).length;
+    const conteudo = `🤖 Automação de boas-vindas — ${sucesso}/${resultados.length} enviadas:\n\n${linhas.join("\n")}`;
+
+    const resposta = await fetch(
+      `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations/${conversationId}/messages`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", api_access_token: CHATWOOT_API_ACCESS_TOKEN },
+        body: JSON.stringify({ content: conteudo, private: true }),
+      },
+    );
+
+    if (!resposta.ok) {
+      console.error(`[whatsapp/webhook] Chatwoot respondeu ${resposta.status} ao registrar confirmação`);
+    }
+  } catch (erro) {
+    console.error("[whatsapp/webhook] erro ao registrar confirmação no Chatwoot:", erro);
+  }
+}
+
+/** Acha a conversa mais recente do contato no inbox de WhatsApp, via busca por telefone. */
+async function buscarConversaChatwoot(waId: string): Promise<number | null> {
+  if (!CHATWOOT_BASE_URL || !CHATWOOT_API_ACCESS_TOKEN || !CHATWOOT_ACCOUNT_ID) return null;
+
+  const cabecalhos = { api_access_token: CHATWOOT_API_ACCESS_TOKEN };
+
+  const respostaContato = await fetch(
+    `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts/search?q=${encodeURIComponent(waId)}`,
+    { headers: cabecalhos },
+  );
+  if (!respostaContato.ok) return null;
+  const dadosContato = (await respostaContato.json()) as ChatwootContatoBusca;
+  const contatoId = dadosContato.payload?.[0]?.id;
+  if (!contatoId) return null;
+
+  const respostaConversas = await fetch(
+    `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts/${contatoId}/conversations`,
+    { headers: cabecalhos },
+  );
+  if (!respostaConversas.ok) return null;
+  const dadosConversas = (await respostaConversas.json()) as ChatwootConversasResposta;
+
+  const inboxIdAlvo = CHATWOOT_INBOX_ID ? Number(CHATWOOT_INBOX_ID) : null;
+  const conversas = (dadosConversas.payload ?? []).filter(
+    (conversa) => inboxIdAlvo === null || conversa.inbox_id === inboxIdAlvo,
+  );
+
+  return conversas.sort((a, b) => b.id - a.id)[0]?.id ?? null;
 }
 
 type GraphApiRespostaMensagens = {
