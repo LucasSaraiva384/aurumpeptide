@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { isSupabaseAdminConfigured, supabaseAdmin, type WhatsappContato } from "@/lib/supabaseAdmin";
 
 // Precisa do módulo `crypto` do Node pra validar a assinatura HMAC — não
@@ -7,9 +7,10 @@ import { isSupabaseAdminConfigured, supabaseAdmin, type WhatsappContato } from "
 export const runtime = "nodejs";
 // A sequência de boas-vindas espera DELAY_ENTRE_MENSAGENS_MS entre cada
 // envio (propositalmente, pra não parecer um bloco único de texto) — isso
-// sozinho já soma ~9s, acima do timeout padrão de 10s do plano Hobby da
-// Vercel somado à latência das chamadas à Graph API. Declarar aqui evita que
-// a função seja encerrada no meio da sequência.
+// sozinho já soma ~9s, além da latência das chamadas à Graph API/Chatwoot.
+// Esse trabalho roda em segundo plano via `after()` (ver POST abaixo), mas a
+// função Vercel precisa continuar viva até ele terminar — daí o
+// maxDuration, acima do timeout padrão de 10s do plano Hobby.
 export const maxDuration = 30;
 
 const META_API_VERSION = process.env.META_API_VERSION || "v21.0";
@@ -117,11 +118,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
-  // A partir daqui, sempre 200 — evita que a Meta entre em retry storm.
-  // Qualquer erro de processamento é logado, nunca propagado.
+  // Responde à Meta imediatamente e processa em segundo plano via `after()`
+  // — a sequência de boas-vindas sozinha leva ~10-13s (delays propositais +
+  // chamadas de API), e se a resposta do webhook demorasse isso tudo, a
+  // Meta poderia interpretar como falha e reentregar o mesmo webhook
+  // (retry), disparando a sequência duas vezes em paralelo. A trava atômica
+  // em reivindicarBoasVindas cobre esse cenário de qualquer forma, mas
+  // responder rápido evita o retry na origem. Qualquer erro de
+  // processamento é logado, nunca propagado — sempre 200.
   try {
     const payload = JSON.parse(corpoBruto) as MetaWebhookPayload;
-    await Promise.all([processarPayload(payload), repassarParaChatwoot(corpoBruto)]);
+    after(() =>
+      processarPayload(payload).catch((erro) => console.error("[whatsapp/webhook] erro ao processar payload:", erro)),
+    );
+    after(() => repassarParaChatwoot(corpoBruto));
   } catch (erro) {
     console.error("[whatsapp/webhook] erro ao processar payload:", erro);
   }
@@ -195,16 +205,41 @@ async function processarMensagem(mensagem: MetaMessage, contato?: MetaContact): 
   const nomePerfil = contato?.profile?.name ?? null;
 
   await registrarMensagem(waId, "recebida", mensagem.type, mensagem.text?.body ?? null, mensagem.id);
+  await buscarOuCriarContato(waId, nomePerfil);
 
-  const contatoRegistrado = await buscarOuCriarContato(waId, nomePerfil);
-
-  // contatoRegistrado é null quando o Supabase não está configurado/acessível
-  // (ver isSupabaseAdminConfigured) — nesse caso não há como saber se é
-  // contato novo, então não envia boas-vindas, pra não arriscar reenviar a
-  // cada mensagem enquanto a chave de service_role não é preenchida.
-  if (contatoRegistrado && !contatoRegistrado.boas_vindas_enviada_em) {
+  // Reivindica atomicamente o direito de enviar as boas-vindas (UPDATE
+  // condicional no banco, não um "SELECT depois UPDATE" separado) — só
+  // quem conseguir marcar a linha ainda não marcada deve enviar. Fecha a
+  // janela de corrida caso a Meta reentregue o mesmo webhook (retry) antes
+  // da primeira execução terminar (a sequência inteira leva ~10-13s).
+  if (await reivindicarBoasVindas(waId)) {
     await enviarBoasVindas(waId);
   }
+}
+
+/**
+ * Marca `boas_vindas_enviada_em` só se ainda estiver nulo, retornando se
+ * esta chamada foi quem conseguiu marcar. Sem Supabase configurado, nunca
+ * reivindica (não há como saber se é contato novo, então não arrisca
+ * reenviar a cada mensagem enquanto a service_role key não é preenchida).
+ */
+async function reivindicarBoasVindas(waId: string): Promise<boolean> {
+  if (!isSupabaseAdminConfigured) return false;
+
+  const { data, error } = await supabaseAdmin
+    .from("whatsapp_contatos")
+    .update({ boas_vindas_enviada_em: new Date().toISOString() })
+    .eq("wa_id", waId)
+    .is("boas_vindas_enviada_em", null)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[whatsapp/webhook] erro ao reivindicar boas-vindas:", error);
+    return false;
+  }
+
+  return Boolean(data);
 }
 
 async function buscarOuCriarContato(waId: string, nomePerfil: string | null): Promise<WhatsappContato | null> {
@@ -261,12 +296,12 @@ async function registrarMensagem(
 
 /**
  * Envia a sequência de boas-vindas (3 mensagens de texto espaçadas por
- * DELAY_ENTRE_MENSAGENS_MS + tabela de preços em PDF), marca o contato como
- * atendido e registra no Chatwoot uma nota privada confirmando o que foi
- * enviado — mesmo que algum envio tenha falhado no meio (cada envio é
- * isolado — falha em um não impede os seguintes — e evita reenvio em loop a
- * cada nova mensagem da mesma pessoa; uma falha pontual significa que essa
- * pessoa não recebeu um dos envios, refletido na nota do Chatwoot).
+ * DELAY_ENTRE_MENSAGENS_MS + tabela de preços em PDF) e registra no Chatwoot
+ * uma nota privada confirmando o que foi enviado — mesmo que algum envio
+ * tenha falhado no meio (cada envio é isolado — falha em um não impede os
+ * seguintes; uma falha pontual significa que essa pessoa não recebeu um dos
+ * envios, refletido na nota do Chatwoot). O contato já foi marcado como
+ * atendido antes desta função rodar, em reivindicarBoasVindas.
  */
 async function enviarBoasVindas(waId: string): Promise<void> {
   const resultados: boolean[] = [];
@@ -279,7 +314,6 @@ async function enviarBoasVindas(waId: string): Promise<void> {
   await esperar(DELAY_ENTRE_MENSAGENS_MS);
   resultados.push(await enviarTabelaPrecos(waId));
 
-  await marcarBoasVindasEnviada(waId);
   await registrarConfirmacaoNoChatwoot(waId, resultados);
 }
 
@@ -431,17 +465,4 @@ async function chamarGraphApiMensagens(corpo: Record<string, unknown>): Promise<
   }
 
   return dados.messages?.[0]?.id ?? null;
-}
-
-async function marcarBoasVindasEnviada(waId: string): Promise<void> {
-  if (!isSupabaseAdminConfigured) return;
-
-  const { error } = await supabaseAdmin
-    .from("whatsapp_contatos")
-    .update({ boas_vindas_enviada_em: new Date().toISOString() })
-    .eq("wa_id", waId);
-
-  if (error) {
-    console.error("[whatsapp/webhook] erro ao marcar boas-vindas como enviada:", error);
-  }
 }
