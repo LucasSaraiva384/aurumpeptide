@@ -5,6 +5,12 @@ import { isSupabaseAdminConfigured, supabaseAdmin, type WhatsappContato } from "
 // Precisa do módulo `crypto` do Node pra validar a assinatura HMAC — não
 // roda em edge runtime.
 export const runtime = "nodejs";
+// A sequência de boas-vindas espera DELAY_ENTRE_MENSAGENS_MS entre cada
+// envio (propositalmente, pra não parecer um bloco único de texto) — isso
+// sozinho já soma ~9s, acima do timeout padrão de 10s do plano Hobby da
+// Vercel somado à latência das chamadas à Graph API. Declarar aqui evita que
+// a função seja encerrada no meio da sequência.
+export const maxDuration = 30;
 
 const META_API_VERSION = process.env.META_API_VERSION || "v21.0";
 const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
@@ -17,17 +23,36 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aurumpeptide.com.b
 // paralelo pra monitoramento/resposta manual. Ver docs/publicacao/log.md.
 const CHATWOOT_WHATSAPP_WEBHOOK_URL = process.env.CHATWOOT_WHATSAPP_WEBHOOK_URL;
 
-// Texto aprovado pelo Marketing Manager e pelo usuário — não alterar sem
-// nova aprovação.
-const MENSAGEM_BOAS_VINDAS = `Olá! 👋 Seja bem-vindo(a) à Aurum Peptide.
+// Sequência de boas-vindas aprovada pelo usuário em 2026-08-21 — 3 mensagens
+// separadas (ver DELAY_ENTRE_MENSAGENS_MS), não alterar sem nova aprovação.
+// Ajustar texto/tempo de espera é só editar as constantes abaixo.
+const MENSAGEM_1_BOAS_VINDAS = `Olá! 👋 Seja muito bem-vindo(a) à Aurum Peptide.
 
-Em instantes, alguém da nossa equipe continua seu atendimento por aqui.
+É um prazer ter você por aqui. 🧬
 
-Enquanto isso, entra no nosso Grupo VIP 💛 — conteúdo exclusivo e atendimento prioritário: https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb?s=cl&p=i&mlu=0
+Trabalhamos com um catálogo selecionado de peptídeos e produtos de pesquisa, sempre buscando oferecer qualidade, procedência e atendimento diferenciado.
 
-Conheça também nosso site: https://aurumpeptide.com.br
+Em instantes vou te enviar duas informações importantes para você conhecer melhor a Aurum.`;
 
-Já já mandamos a tabela de preços em PDF 📄`;
+const MENSAGEM_2_GRUPO_VIP = `🔥 Quer receber nossas melhores condições?
+
+Temos um grupo exclusivo no WhatsApp onde divulgamos promoções, oportunidades e condições especiais antes de serem divulgadas em outros canais.
+
+👇 Entre pelo link:
+
+https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb?s=cl&p=i&mlu=0
+
+A participação é gratuita e as condições divulgadas no grupo podem ser por tempo ou estoque limitado.`;
+
+// PDF é enviado automaticamente logo em seguida (enviarTabelaPrecos) — texto
+// avisa que o anexo já vem, em vez de pedir pra responder "TABELA".
+const MENSAGEM_3_TABELA_PRECOS = `📋 Nossa tabela de preços atualizada também está aqui pra você.
+
+Nela você encontra nosso catálogo, marcas, apresentações e valores atuais — já te enviando o PDF a seguir.
+
+Se preferir, também podemos te ajudar a encontrar um produto específico.`;
+
+const DELAY_ENTRE_MENSAGENS_MS = 3_000;
 
 // -- Payload do webhook da Meta (só os campos usados aqui) --
 // https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/payload-examples
@@ -229,29 +254,39 @@ async function registrarMensagem(
 }
 
 /**
- * Envia texto de boas-vindas + tabela de preços em PDF (duas chamadas
- * isoladas — falha em uma não impede a outra) e marca o contato como
- * atendido, mesmo que algum envio tenha falhado (evita reenvio em loop a
- * cada nova mensagem da mesma pessoa; uma falha pontual significa que essa
- * pessoa não recebeu um dos dois envios).
+ * Envia a sequência de boas-vindas (3 mensagens de texto espaçadas por
+ * DELAY_ENTRE_MENSAGENS_MS + tabela de preços em PDF) e marca o contato como
+ * atendido ao final, mesmo que algum envio tenha falhado no meio (cada envio
+ * é isolado — falha em um não impede os seguintes — e evita reenvio em loop
+ * a cada nova mensagem da mesma pessoa; uma falha pontual significa que essa
+ * pessoa não recebeu um dos envios).
  */
 async function enviarBoasVindas(waId: string): Promise<void> {
-  await enviarTextoBoasVindas(waId);
+  await enviarMensagemTexto(waId, MENSAGEM_1_BOAS_VINDAS);
+  await esperar(DELAY_ENTRE_MENSAGENS_MS);
+  await enviarMensagemTexto(waId, MENSAGEM_2_GRUPO_VIP);
+  await esperar(DELAY_ENTRE_MENSAGENS_MS);
+  await enviarMensagemTexto(waId, MENSAGEM_3_TABELA_PRECOS);
+  await esperar(DELAY_ENTRE_MENSAGENS_MS);
   await enviarTabelaPrecos(waId);
   await marcarBoasVindasEnviada(waId);
 }
 
-async function enviarTextoBoasVindas(waId: string): Promise<void> {
+function esperar(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function enviarMensagemTexto(waId: string, texto: string): Promise<void> {
   try {
     const waMessageId = await chamarGraphApiMensagens({
       messaging_product: "whatsapp",
       to: waId,
       type: "text",
-      text: { body: MENSAGEM_BOAS_VINDAS },
+      text: { body: texto },
     });
-    await registrarMensagem(waId, "enviada", "text", MENSAGEM_BOAS_VINDAS, waMessageId);
+    await registrarMensagem(waId, "enviada", "text", texto, waMessageId);
   } catch (erro) {
-    console.error("[whatsapp/webhook] erro ao enviar texto de boas-vindas:", erro);
+    console.error("[whatsapp/webhook] erro ao enviar mensagem de texto:", erro);
   }
 }
 
