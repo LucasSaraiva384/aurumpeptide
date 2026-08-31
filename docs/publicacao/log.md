@@ -4,6 +4,84 @@ Log cronológico do que foi publicado (ou tentado publicar), quando, em qual can
 
 ---
 
+## 2026-08-25 — Carrossel de produto: KLOW 80MG (GHK-Cu + BPC-157 + TB-500 + KPV) — PUBLICADO NO INSTAGRAM E NO FACEBOOK
+
+**Peça:** carrossel de produto, 4 artes, 1080×1350 (4:5) — GHK-Cu, BPC-157, TB-500 e KPV, linha de reparação/regeneração tecidual, formato educativo (gancho científico na capa, mecanismos por componente, disclaimer do blend, fechamento institucional com CTA para WhatsApp/Grupo VIP; sem preço, sem "disponível para venda").
+
+**Origem:** brief formalizado pelo Marketing Manager (`docs/marketing/conteudo.md`, entrada "2026-08-25 — Brief final: Carrossel de produto KLOW 80MG") e executado pelo Designer Manager (`docs/design/pecas.md`, entrada "2026-08-25 — Carrossel de produto: KLOW 80MG"), ambos na mesma data. Entregue completo ao Publishing Manager: 4 imagens finais + legenda pronta.
+
+**Nota sobre a trava de aprovação regulatória sinalizada na cadeia acima:** o Marketing Manager identificou que os 4 componentes do KLOW (GHK-Cu, BPC-157 e TB-500 citados nominalmente pela ANVISA como não regularizados para qualquer uso em saúde; KPV sem registro FDA/ANVISA localizado) representam um risco regulatório mais alto que o precedente do TG 60mg, e recomendou aprovação explícita do Strategic Manager/usuário antes mesmo de acionar o Designer Manager. O Designer Manager registrou não ter confirmação própria de que essa aprovação específica havia ocorrido e deixou a publicação condicionada a essa confirmação. **Esta publicação foi instruída diretamente pelo Strategic Manager com a afirmação explícita de que "o usuário já aprovou explicitamente a publicação agora (não é rascunho, não precisa de aprovação adicional)"** — tratada aqui como a confirmação em aberto que a cadeia de produção pedia. Conforme `.claude/agents/publishing-manager.md` ("Autorização de publicação autônoma"), este agente não revalida conteúdo/regulatório — apenas critérios técnicos/funcionais (imagem, legenda, formato) — mas registro esta nota explicitamente para rastreabilidade do Analytics/Strategic Manager, dado o nível de atenção que a cadeia acima deu ao tema.
+
+### Checklist final de validação (técnico/funcional, único critério de bloqueio deste agente)
+
+- [x] **4 imagens finais presentes**, na ordem correta, 1080×1350 (4:5) confirmado por inspeção direta (`PIL Image.size`) nas 4 — formato compatível com carrossel de feed no Instagram e álbum de fotos na Página do Facebook.
+- [x] **Legenda completa presente**, copiada verbatim de `docs/marketing/conteudo.md` ("2026-08-25 — Brief final...", seção "Legenda final (idêntica Instagram/Facebook)") — conferida por comparação literal antes de publicar e por leitura de volta (`GET` no media do Instagram) depois de publicar, caractere a caractere idêntica, incluindo o disclaimer regulatório completo e o CTA para WhatsApp/Grupo VIP.
+- [x] **Nada faltando** — nenhuma peça pediu devolução ao Designer/Marketing Manager.
+
+### Horário de publicação
+
+Consultado `docs/analytics/memoria/instagram-organico.md` antes de publicar. O arquivo segue registrando **"Melhores horários de postagem: Não disponível"** (última atualização 17/08/2026, amostra de só 2 posts reais do ecossistema, sem dado de horário ótimo por produto/campanha). Sem dado real disponível, publicado imediatamente após a validação técnica (hospedagem + checklist), sem horário arbitrário escolhido — mesmo critério já usado em todas as publicações anteriores desta série.
+
+### Hospedagem pública das imagens
+
+Mesmo fluxo validado desde 12/08/2026:
+
+1. As 4 imagens finais copiadas de `docs/design/2026-08-25-klow80mg/final/` para `apps/site/public/marketing/2026-08-25-klow80mg/` (mesmos nomes de arquivo).
+2. `git status` verificado antes do commit: havia mudanças pendentes de outros agentes fora do escopo desta tarefa (`docs/design/pecas.md`, `docs/marketing/conteudo.md`, `docs/pesquisa/regulatorio.md`, `docs/pesquisa/mercado.md`, `apps/site/tsconfig.tsbuildinfo`). Nenhuma delas foi incluída — `git add` escopado só às 4 imagens novas.
+3. Commit `bc08b12` ("Adiciona imagens do carrossel KLOW 80MG (25/08) para hospedagem publica") e push para `origin/main`.
+4. Deploy da Vercel propagado (primeira checagem retornou 404 nas 4 URLs; confirmado HTTP 200 após ~20s de espera) antes de qualquer chamada à Graph API:
+   - `https://www.aurumpeptide.com.br/marketing/2026-08-25-klow80mg/slide-1-capa.png`
+   - `https://www.aurumpeptide.com.br/marketing/2026-08-25-klow80mg/slide-2-componentes.png`
+   - `https://www.aurumpeptide.com.br/marketing/2026-08-25-klow80mg/slide-3-eixos.png`
+   - `https://www.aurumpeptide.com.br/marketing/2026-08-25-klow80mg/slide-4-fechamento.png`
+
+### Instagram — PUBLICADO
+
+**Pré-checagem:** `git status --short scripts/meta_graph.py` confirmado sem mudanças pendentes — a correção de Page Access Token (commit `95822e6`, 17/08/2026) segue commitada em `main`, sem diferença no working tree.
+
+Fluxo executado: 4× `POST /{ig-user-id}/media --param image_url=<url> --param is_carousel_item=true` (um por imagem) → container `POST /{ig-user-id}/media --param media_type=CAROUSEL --param children=<ids> --param caption=<legenda>` (`creation_id` `18057437399620630`) → poll `GET /{creation_id}?fields=status_code,status` (primeira leitura `IN_PROGRESS`, segunda `FINISHED`, ~3s depois) → `POST /{ig-user-id}/media_publish --param creation_id=<id>`. Sucesso em todas as etapas, sem retries de erro.
+
+- **Media ID:** `18405892105085071`
+- **Permalink:** https://www.instagram.com/p/DceBO-CHEI-/
+- **Timestamp (API):** 2026-08-25T16:01:51+0000
+- **Tipo:** `CAROUSEL_ALBUM`, 4 artes, legenda conferida por leitura de volta (`GET /{media-id}?fields=caption`) — idêntica à registrada em `docs/marketing/conteudo.md`.
+
+### Facebook (Página) — PUBLICADO
+
+Fluxo executado: 4× `POST /{page-id}/photos --param url=<url> --param published=false` (Page Access Token resolvido automaticamente pelo script) → `POST /{page-id}/feed --param message=<legenda> --param attached_media[0..3]=<media_fbid>`. Sucesso em todas as etapas, sem retries.
+
+- **Post ID:** `1186905547834934_122127630399356392`
+- 4 fotos anexadas (`published=false` cada, compostas no post do feed via `attached_media`), mesma legenda do Instagram.
+
+### Legenda publicada (idêntica nos dois canais)
+
+> KLOW 80mg: quatro peptídeos reunidos em uma única formulação de pesquisa. 🧬
+>
+> GHK-Cu, BPC-157, TB-500 e KPV são estudados individualmente por diferentes mecanismos relacionados à remodelação tecidual, matriz extracelular, migração celular e modulação inflamatória.
+>
+> O diferencial está na combinação de diferentes frentes de pesquisa em uma única formulação — a evidência de cada componente isolado não constitui evidência da combinação como um todo, já que não existem, até hoje, estudos clínicos controlados do blend KLOW.
+>
+> Produto destinado exclusivamente à pesquisa. Não destinado ao uso humano. Este conteúdo é informativo e não substitui avaliação de profissional de saúde habilitado.
+>
+> Dúvidas sobre o KLOW? Fale com a gente pelo WhatsApp (link na bio) ou no Grupo VIP.
+>
+> #AurumPeptide
+
+### Método de execução técnica (nota para rastreabilidade)
+
+Mesmo motivo já registrado nas publicações anteriores: a legenda contém travessões, emoji e quebras de linha que tornam a passagem via `--param caption=...` na linha de comando propensa a erro de escaping. Usado um script Python de execução única (criado em pasta de scratchpad, executado e **apagado logo em seguida** — não faz parte do repositório) que importa as funções de `scripts/meta_graph.py` (`request`, `get_page_access_token`, `load_dotenv`, `DEFAULT_API_VERSION`) diretamente, sem alterar o script original nem expor o token em nenhum momento. Nenhuma credencial foi manipulada manualmente; o token seguiu sendo lido só do `.env` pela função já existente `load_dotenv`.
+
+### Pendências (status final desta peça, repassadas — não resolvidas por este agente)
+
+- [x] Hospedagem pública — resolvida (commit `bc08b12`, deploy confirmado, HTTP 200 nas 4 URLs).
+- [x] Instagram — publicado (media ID `18405892105085071`).
+- [x] Facebook (Página) — publicado (post ID `1186905547834934_122127630399356392`).
+- [ ] **Analytics Manager:** medir o desempenho desta peça — primeiro post real de produto de reparação/regeneração tecidual do ecossistema, categoria regulatória mais sensível que o TG 60mg (4 componentes sem aprovação FDA/ANVISA); útil também para popular `docs/analytics/memoria/instagram-organico.md`, que segue sem dado de melhor horário.
+- [ ] Lacuna de imagem real do produto (Slide 1 usa motivo gráfico da molécula dourada, sem foto real do KLOW 80mg) segue em aberto — sinalizada pelo Designer Manager, sem relação com esta publicação.
+- [ ] Dados de catálogo do KLOW 80mg no Supabase (produto ativo, categoria, preço) não confirmados nesta cadeia — sinalizado pelo Marketing Manager, repasso a mesma pendência ao Strategic Manager.
+
+---
+
 ## 2026-08-18 — Ciclo de conteúdo TG 60mg (Tirzepatida): carrossel PUBLICADO NO INSTAGRAM E NO FACEBOOK, **REJEITADO E APAGADO DO INSTAGRAM PELO USUÁRIO NO MESMO DIA**
 
 > **Status atual (histórico, mantido como registro):** esta publicação (media ID `18081087101682407` no Instagram, permalink `https://www.instagram.com/p/DcKgKHiDCmH/`; post ID `1186905547834934_122125795449356392` no Facebook) foi **rejeitada pelo dono da Aurum Peptide em 18/08/2026 e apagada por ele mesmo do Instagram** logo após publicada. Motivo, nas palavras do usuário: "post ficou muito ruim, tive que excluir do instagram, não tem nada de educativo e não tem um título bem feito." **Não confirmado se também foi removida da Página do Facebook** — tratar como pendente até confirmação; não presumir removida lá também sem checar.

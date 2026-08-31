@@ -334,3 +334,89 @@ Nenhum conflito identificado entre o briefing e `docs/identidade-visual.md` — 
 - `docs/design/2026-08-14-carrossel-semax-selank/final/pagina-5-comparacao.png` (intocada, mtime original de 14/08)
 
 **Entregue ao Publishing Manager:** as 6 páginas acima (3 recompostas + 3 originais) formam o carrossel corrigido, completo e pronto para nova publicação, na mesma ordem de páginas de 14/08. A legenda associada é a versão corrigida já registrada em `docs/marketing/conteudo.md`, entrada de 14/08, seção "Correção pós-rejeição (2026-08-16)" — parágrafo de portfólio removido da legenda também. Publicação depende de nova aprovação do Strategic Manager/usuário antes de seguir (não republicar automaticamente só porque a arte está pronta — mesma trava já usada na primeira publicação desta peça).
+
+---
+
+## 2026-08-25 — Carrossel de produto: KLOW 80MG (GHK-Cu + BPC-157 + TB-500 + KPV)
+
+**Briefing de origem:** `docs/marketing/conteudo.md`, entrada "2026-08-25 — Brief final: Carrossel de produto KLOW 80MG (GHK-Cu + BPC-157 + TB-500 + KPV)", seção "BRIEF FINAL — pronto para o Designer Manager".
+
+**Contexto recebido do Strategic Manager, com decisões já tomadas (não reabertas nesta execução):** (1) o disclaimer regulatório do Slide 4 permanece discreto, como letra miúda, conforme o rascunho original do usuário — não reforcei visualmente esse aviso além do briefing; (2) o CTA do Slide 4 usa o texto exato já ajustado pelo Marketing Manager para WhatsApp/Grupo VIP, não "consulte disponibilidade"; (3) não há foto real do KLOW 80mg disponível — usei o mesmo critério já validado no TG 60mg (motivo gráfico da molécula dourada oficial, nunca rótulo/embalagem/selo fabricados).
+
+**Nota sobre a trava de aprovação registrada pelo próprio Marketing Manager:** a entrada de origem em `docs/marketing/conteudo.md` recomendava aprovação explícita do Strategic Manager e do usuário antes de acionar o Designer Manager, por causa do achado regulatório (os 4 componentes do KLOW — GHK-Cu, BPC-157, TB-500 nominalmente, e KPV por ausência de registro — não têm aprovação FDA/ANVISA, diferente do TG 60mg). Executei esta peça porque o pedido chegou como "brief final, já formalizado e validado", via a cadeia hierárquica (Strategic Manager). Registro aqui, por rastreabilidade, que não tenho confirmação própria nesta tarefa de que essa aprovação explícita específica (achado regulatório) foi concluída — sinalizo para o Strategic Manager confirmar antes de repassar ao Publishing Manager, já que publicar não é meu escopo.
+
+### O que foi produzido
+
+**Carrossel de feed (Instagram + Facebook, mesma peça nos dois canais), 4 artes, 1080×1350 (4:5), dimensão confirmada nas 4:**
+- `docs/design/2026-08-25-klow80mg/final/slide-1-capa.png`
+- `docs/design/2026-08-25-klow80mg/final/slide-2-componentes.png`
+- `docs/design/2026-08-25-klow80mg/final/slide-3-eixos.png`
+- `docs/design/2026-08-25-klow80mg/final/slide-4-fechamento.png`
+
+Todas as 4 artes já saem com o texto do brief composto sobre a arte — prontas para publicar, texto conferido caractere a caractere contra `docs/marketing/conteudo.md` antes de aceitar como final.
+
+### Ferramentas usadas e como
+
+1. **Fundo institucional — gerado dedicado para esta peça, via OpenAI (`gpt-image-1`), diferente da reutilização padrão das peças anteriores.** O próprio briefing permitia reaproveitar o fundo já validado (`docs/design/2026-07-28-tg60mg/raw/bg-gemini-01.png`) ou gerar um novo, "critério do Designer Manager", condicionado a a estética 'laboratório' pedida pelo usuário exigir um fundo dedicado. Avaliei que sim: o brief pede explicitamente "elementos científicos sutis (moléculas, estruturas químicas, DNA)" e "estética de laboratório/biotech de alto padrão" com mais ênfase que os briefings anteriores. Gerei um fundo novo com hélices de DNA estilizadas e estruturas moleculares simples, monocromáticas em dourado `#C6A55A`, baixa proeminência, nos cantos, sobre o sistema institucional padrão (`#0D1B16` → `#0F2E25`, glow inferior sutil, textura canvas). Prompt incorporou explicitamente os hex oficiais, o vocabulário normativo (editorial/minimalista/institucional/premium) e as proibições de `docs/identidade-visual.md` (sem bokeh, luz laranja, brilho exagerado, sem frasco/seringa/agulha/comprimido/jaleco/rosto humano, sem texto/logo embutido, sem cor fora da paleta).
+   - Comando: `python scripts/openai_image.py "<prompt>" --out docs/design/2026-08-25-klow80mg/raw/bg-klow-openai-01.png --size 1024x1536`. Funcionou de primeira, sem necessidade de segunda tentativa.
+   - Arquivo bruto: `docs/design/2026-08-25-klow80mg/raw/bg-klow-openai-01.png`.
+2. **Duas variantes de recorte da MESMA imagem-base**, sem gerar nada novo: `load_base()` (recorte central padrão, usado nos Slides 1) e `load_base_plain()` (recorte ancorado na faixa inferior da mesma imagem, sem os motivos de canto, usado nos Slides 2, 3 e 4 — ver "Iterações" abaixo, motivo é legibilidade).
+3. **Molécula/logo — nunca gerada por IA, sempre derivada dos arquivos oficiais:** reaproveitados os recortes já extraídos em 28/07 (`molecule-cutout.png`, `lockup-cutout.png`, copiados para o `raw/` desta pasta) — mesmo recorte por detecção de cor sobre `assets/logo-oficial.png`/`assets/logo-oficial-com-nome.png`, sem redesenho, sem alteração de proporção/cor, sem contorno/sombra/3D.
+4. **Composição final (texto + logo + fundo):** script novo `docs/design/2026-08-25-klow80mg/compose.py`, mesmo padrão dos `compose.py` anteriores — Georgia serif (`#C6A55A`) para títulos, Georgia Bold para nomes de componente/destaques, Georgia Italic para a assinatura de marca do Slide 4, Segoe UI para corpo em branco gelo, Segoe UI Light (`GOLD_DIM`) para rodapés/disclaimer discretos. Texto e logo aplicados por composição direta em Python/Pillow — não pedido à IA (mesmo motivo já registrado nas entradas anteriores: os scripts de API de imagem não controlam layout/tipografia com a precisão exigida).
+
+### Iterações (problemas encontrados e corrigidos antes de aceitar como final)
+
+- **Slides 2 e 3 — título colidindo com o motivo de DNA/molécula do canto na primeira renderização.** O recorte padrão do fundo posicionava os motivos gráficos muito perto do topo, sob o título, prejudicando a leitura ("KLOW?" ficava parcialmente sobre os traços dourados). Corrigido trocando o fundo dessas duas artes para `load_base_plain()` — mesma imagem-base, recorte ancorado na faixa inferior (sem motivos de canto), preservando a marca d'água da molécula oficial (opacidade 7%, dentro de 5–15%) como o elemento científico dessas páginas, conforme já previsto no próprio briefing ("marca d'água... pode aparecer sutil nos Slides 2–3").
+- **Slide 4 — disclaimer regulatório perdendo legibilidade sobre a hélice de DNA do canto direito, na primeira renderização.** Como o Slide 4 concentra bastante texto (título, subtítulo, destaque, disclaimer, CTA, assinatura, lockup), o bloco de texto ocupava a mesma faixa vertical dos motivos de canto do fundo padrão, com o disclaimer literalmente cruzando a hélice dourada — inaceitável para um texto de proteção regulatória, que o próprio briefing pede para tratar com "peso visual real, não decorativo". Priorizei legibilidade sobre densidade decorativa: troquei o Slide 4 também para `load_base_plain()`, com a marca d'água da molécula (opacidade 7%) centralizada por trás de todo o bloco de texto.
+- **Slides 2 e 3 — vão vazio grande entre título e conteúdo na primeira renderização** (conteúdo centralizado no espaço disponível deixava quase metade da página em branco antes do primeiro bloco de texto). Ajustado o cálculo de centralização vertical com viés para o topo (conteúdo começa mais perto do título, sobra fica concentrada antes do rodapé/margem inferior) — resultado mais denso e legível, sem abandonar o "respiro visual generoso" pedido por `docs/identidade-visual.md`.
+
+### Tratamento do disclaimer regulatório (Slide 4) — decisão registrada explicitamente
+
+Por instrução repassada pelo Strategic Manager (decisão já tomada pelo usuário, não reaberta aqui), o disclaimer ("Produto destinado exclusivamente à pesquisa. Não destinado ao uso humano. Este conteúdo é informativo e não constitui indicação de uso.") foi tratado como texto discreto — mesmo padrão tipográfico já usado nos rodapés de fonte/disclaimer de peças anteriores (`GOLD_DIM`, Segoe UI Light, ~21px), sem caixa, ícone ou destaque visual adicional. Isso diverge pontualmente da recomendação visual do próprio Marketing Manager no brief de origem ("dar peso visual real... não miniaturizado") — sinalizo essa divergência aqui por rastreabilidade, não por discordância: segui a instrução explícita mais recente. Na prática, o texto ficou no mesmo nível de legibilidade dos disclaimers/rodapés já aprovados em peças publicadas (TG 60mg, carrossel de 12/08) — não foi miniaturizado a ponto de ficar ilegível no feed, apenas não ganhou tratamento extra.
+
+### Validação contra `docs/identidade-visual.md`
+
+Checklist aplicado às 4 artes:
+- [x] Paleta oficial — fundo verde profundo `#0D1B16`/`#0F2E25` (fundo dedicado, gerado dentro do hex especificado), dourado `#C6A55A` em títulos/destaques/nomes de componente, branco gelo no corpo, `GOLD_DIM` em rodapés/disclaimer discretos. Nenhuma cor proibida (roxo, azul vibrante, vermelho, neon, gradiente exagerado) em nenhuma arte.
+- [x] Fundo padrão — gradiente radial suave, glow inferior sutil, textura leve tipo canvas; sem bokeh, luzes laranja ou brilhos exagerados (checagem específica por ser fundo novo, gerado por IA, não apenas reaproveitado).
+- [x] Marca d'água — molécula oficial em opacidade 7% (dentro de 5–15%) nos Slides 2, 3 e 4, sem sombra/contorno/3D.
+- [x] Tipografia — serif (Georgia/Georgia Bold/Georgia Italic) em títulos/destaques/assinatura, sans-serif (Segoe UI/Segoe UI Light) no corpo/rodapé, espaçamento amplo.
+- [x] Estilo geral — editorial, minimalista, institucional, premium; layout centrado e simétrico nas 4 artes (ajustado por iteração nos Slides 2 e 3, ver acima).
+- [x] Proibições — logo/molécula nunca redesenhada, distorcida ou recolorida; sempre derivada dos arquivos oficiais por recorte direto (reaproveitado do recorte já usado em 28/07). Nenhum frasco, ampola, seringa, agulha, comprimido, jaleco ou rosto humano em nenhuma das 4 artes — confirmado por inspeção visual direta de cada arquivo.
+- [x] Lockup completo (`assets/logo-oficial-com-nome.png`, via `lockup-cutout.png`) no Slide 1 (capa) e Slide 4 (fechamento), sem distorção.
+- [x] Nenhum preço, "disponível para venda"/"disponível para clientes Aurum" ou "consulte disponibilidade" em nenhuma das 4 artes — confirmado por releitura literal do texto renderizado.
+- [x] Nenhuma promessa terapêutica ("cura", "garante resultados", "elimina inflamação", "regenera músculos") em nenhuma arte — confirmado.
+- [x] Texto renderizado idêntico, caractere a caractere, ao brief final em `docs/marketing/conteudo.md` — conferido por releitura direta de cada imagem antes de aceitar.
+
+Único conflito identificado: nenhum entre o brief e `docs/identidade-visual.md` em si — os ajustes acima (fundo "plain" nos Slides 2–4, viés de centralização) foram decisões de execução do Designer Manager para cumprir o próprio briefing (legibilidade do disclaimer, "sem visual de tabela clínica/farmácia genérica"), não uma reformulação de direção.
+
+### Postagem final entregue ao Publishing Manager
+
+**Carrossel (Instagram + Facebook, mesma peça nos dois canais), 4 artes, nesta ordem:**
+1. `docs/design/2026-08-25-klow80mg/final/slide-1-capa.png`
+2. `docs/design/2026-08-25-klow80mg/final/slide-2-componentes.png`
+3. `docs/design/2026-08-25-klow80mg/final/slide-3-eixos.png`
+4. `docs/design/2026-08-25-klow80mg/final/slide-4-fechamento.png`
+
+**Legenda (idêntica Instagram/Facebook):** já pronta em `docs/marketing/conteudo.md`, entrada "2026-08-25 — Brief final: Carrossel de produto KLOW 80MG", seção "Legenda final (idêntica Instagram/Facebook)" — reproduzida abaixo por conveniência:
+
+> KLOW 80mg: quatro peptídeos reunidos em uma única formulação de pesquisa. 🧬
+>
+> GHK-Cu, BPC-157, TB-500 e KPV são estudados individualmente por diferentes mecanismos relacionados à remodelação tecidual, matriz extracelular, migração celular e modulação inflamatória.
+>
+> O diferencial está na combinação de diferentes frentes de pesquisa em uma única formulação — a evidência de cada componente isolado não constitui evidência da combinação como um todo, já que não existem, até hoje, estudos clínicos controlados do blend KLOW.
+>
+> Produto destinado exclusivamente à pesquisa. Não destinado ao uso humano. Este conteúdo é informativo e não substitui avaliação de profissional de saúde habilitado.
+>
+> Dúvidas sobre o KLOW? Fale com a gente pelo WhatsApp (link na bio) ou no Grupo VIP.
+>
+> #AurumPeptide
+
+**Não publiquei.** Escopo do Publishing Manager, conforme `CLAUDE.md` e a definição deste agente.
+
+### Pendências (repasso, não resolvo)
+
+- **Aprovação explícita do achado regulatório** (ANVISA cita GHK-Cu/BPC-157/TB-500 nominalmente como não regularizados; KPV também sem registro) pelo Strategic Manager/usuário antes de publicar — sinalizada pelo próprio Marketing Manager no brief de origem; não tenho confirmação própria de que já ocorreu.
+- **Lacuna de imagem real do produto:** não há foto real aprovada do KLOW 80mg — usado o motivo gráfico da molécula dourada oficial no Slide 1, mesmo critério já validado para o TG 60mg. Revisitar o Slide 1 assim que houver foto real do produto.
+- **Dados de catálogo do KLOW 80mg não confirmados no Supabase** (produto ativo, categoria) — não verificado nesta tarefa, sem acesso a ferramentas de banco/site; sinalizado pelo Marketing Manager, repasso a mesma pendência.
+- Publishing Manager: publicar apenas após a confirmação acima, na ordem indicada, com a legenda pronta.

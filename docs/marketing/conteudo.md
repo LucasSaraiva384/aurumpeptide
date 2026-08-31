@@ -871,3 +871,157 @@ Este é o primeiro ponto de contato entre a marca e um novo lead no WhatsApp —
 - [x] Texto revisado com os 4 elementos pedidos pelo usuário (boas-vindas, Grupo VIP, site, aviso de PDF) — substitui a versão sem CTA.
 - [ ] Aprovação final do usuário antes de ativar em produção (o pedido de inclusão dos 4 elementos já é a decisão do usuário; falta apenas validar o texto literal antes do go-live).
 - [ ] Implementação técnica: confirmar com quem for integrar a Cloud API que o PDF da tabela de preços será enviado como mensagem separada, imediatamente após esta, e que o link do Grupo VIP só é enviado no primeiro contato (regra de automação, não do texto) — fora do escopo deste agente, apenas sinalizado aqui para rastreabilidade.
+
+---
+
+## 2026-08-25 — Brief final: Carrossel de produto KLOW 80MG (GHK-Cu + BPC-157 + TB-500 + KPV)
+
+### Contexto
+
+O usuário (fundador da Aurum Peptide) forneceu um rascunho completo de carrossel (título, 4 slides, legenda, diretrizes visuais) para o produto **KLOW 80MG**, um blend de 4 peptídeos: GHK-Cu, BPC-157, TB-500 e KPV — linha de reparação/regeneração tecidual. Esta entrada formaliza o brief final após revisão contra `docs/marca.md`, `docs/missao.md`, `docs/valores.md`, `docs/tom-de-voz.md`, `docs/identidade-visual.md`, `docs/avatar-do-cliente.md`, `docs/objetivos.md`, `docs/pesquisa/cientifico.md` e `docs/pesquisa/regulatorio.md`, com os ajustes explicados abaixo. O rascunho do usuário já era, na maior parte, de boa qualidade técnica e de tom — os ajustes aqui são pontuais, não uma reescrita total como ocorreu com o TG 60mg em 18/08.
+
+**Formato confirmado, mantido conforme pedido pelo usuário:** carrossel de exatamente 4 artes, 4:5 (1080×1350px) — diferente do padrão de 6 páginas adotado para TG 60mg; não expandi o formato, só ajustei conteúdo dentro dele.
+
+### ⚠️ Achado regulatório que muda o nível de risco desta peça em relação ao precedente TG 60mg — sinalizo explicitamente ao Strategic Manager
+
+Diferente do TG 60mg (princípio ativo Tirzepatida, **aprovado por FDA e ANVISA**, ver `docs/pesquisa/cientifico.md`), os 4 componentes do KLOW têm status regulatório muito mais sensível no Brasil:
+
+- **GHK-Cu, BPC-157 e TB-500** são citados **nominalmente** pela ANVISA (`docs/pesquisa/regulatorio.md`, alerta de 02-03/07/2026) como **não regularizados em nenhuma categoria** (nem medicamento, nem cosmético, nem suplemento) e classificados pela própria agência como **"ilegais para qualquer uso em saúde, inclusive estético"**.
+- **KPV** não tem alerta nominal da ANVISA localizado, mas `docs/pesquisa/cientifico.md` registra que também **não é medicamento aprovado por FDA ou ANVISA, sem registro em nenhuma categoria**.
+
+Ou seja: os 4 componentes do KLOW, sem exceção, estão fora de qualquer aprovação regulatória no Brasil — diferente do TG 60mg, onde havia pelo menos aprovação FDA/ANVISA da molécula a ancorar o discurso de "comprovação científica". Isso não significa que o conteúdo não possa ser produzido (o próprio rascunho do usuário já inclui o disclaimer "Produto destinado exclusivamente à pesquisa. Não destinado ao uso humano.", que é o enquadramento padrão do mercado para esse cenário), mas:
+
+1. Este disclaimer não pode ser tratado como detalhe decorativo de rodapé — recomendo ao Designer Manager tratá-lo com peso visual real (legível, não miniaturizado a ponto de ficar ilegível no feed).
+2. Recomendo que o Strategic Manager (CMO) e o usuário revisem e aprovem explicitamente esta peça antes do Designer Manager iniciar a execução — mesmo nível de cautela já aplicado ao TG 60mg em 18/08 (ver entrada acima, "Designer Manager NÃO foi acionado" até aprovação explícita), mas aqui por motivo regulatório, não por qualidade de copy.
+3. Não é meu papel decidir se o produto deve ou não ser comunicado — só sinalizar o achado com a mesma transparência que o Research Manager já usa em `docs/pesquisa/cientifico.md` e `docs/pesquisa/regulatorio.md`.
+
+**Lacuna adicional:** a categoria "reparação/regeneração tecidual" do KLOW ainda não está documentada em `docs/marca.md` (que hoje lista apenas "performance física/esportiva" e "emagrecimento/metabolismo" como linhas confirmadas — ver seção "Pendências" daquele documento, que já prevê que novas categorias podem ser adicionadas conforme o portfólio evoluir). Sinalizo ao Strategic Manager para considerar atualizar `docs/marca.md` se o KLOW for, de fato, uma nova linha confirmada do portfólio.
+
+**Lacuna de verificação de catálogo:** não tenho, nesta tarefa, acesso a ferramentas de banco de dados/site para confirmar o KLOW 80mg como produto ativo real no Supabase (preço, status, fotos cadastradas) — diferente do padrão já estabelecido para o TG 60mg ("sempre verificar números do brief contra dados reais do Supabase"). Recomendo essa confirmação antes da publicação, feita por quem tiver acesso (Strategic Manager/usuário).
+
+### Ajuste 1 — CTA do Slide 4: "CONSULTE DISPONIBILIDADE" → redirecionamento para WhatsApp/Grupo VIP
+
+`docs/tom-de-voz.md` ("Posts de produto no Instagram/Facebook — nunca preço nem 'disponível para venda'") é explícito: posts orgânicos de produto não podem se apresentar como "disponível para venda" em nenhuma variação — "CONSULTE DISPONIBILIDADE" cai diretamente nessa proibição (é uma variação de "disponível para clientes", só que em forma de convite). A mesma diretriz já deixa claro que o CTA correto é redirecionamento de canal para WhatsApp pessoal/Grupo VIP — não é enfraquecer o CTA, é trocar o enquadramento de "oferta" para "conversa". Ajustado no Slide 4 abaixo.
+
+### Ajuste 2 — Slides 1 e 4 recalibrados para não soarem como lançamento/venda
+
+O carrossel TG 60mg publicado em 18/08/2026 foi apagado pelo próprio usuário porque a capa e o fechamento liam como anúncio de produto, não como conteúdo educativo (ver entrada acima, "Rejeição pós-publicação"). O rascunho do KLOW tem o mesmo risco pontual:
+
+- **Slide 1 (capa):** o título original ("KLOW 80MG — 4 PEPTÍDEOS. UMA ESTRATÉGIA DE REPARAÇÃO.") funciona bem como conceito, mas coloca o nome do produto como manchete principal, no lugar de uma pergunta/gancho científico — o padrão que efetivamente funcionou nos carrosséis aprovados (12/08, 14/08–17/08, TG 60mg reescrito). Reformulei para abrir com o gancho científico (mecanismos/pesquisa) e manter o nome do produto como identificador logo abaixo, não como manchete.
+- **Slide 4 (fechamento):** o próprio usuário descreveu este slide como "extremamente premium e comercial" — concordo que, como estava (CTA de disponibilidade + nome do produto em destaque), cruzava a linha. Mantive a essência (nome do produto, os 4 componentes, o tom "Ciência • Pureza • Excelência"), mas troquei o CTA e adicionei peso ao disclaimer regulatório.
+
+**Slides 2 e 3 não precisaram de reescrita** — já nascem no formato educativo correto (mecanismo por componente, disclaimer do blend, benefícios sem promessa terapêutica) e cumprem a restrição de linguagem que o próprio usuário já definiu.
+
+### Ajuste 3 — precisão científica (checagem contra `docs/pesquisa/cientifico.md`)
+
+| Componente | Claim do rascunho | Status na base de conhecimento |
+|---|---|---|
+| **KPV** | "modula vias inflamatórias, incluindo sinalização relacionada ao NF-κB" | **Bem respaldado** — 4 PMIDs verificados diretamente no PubMed (18092346, 17934097, 28143741, 27458604), toda evidência pré-clínica (modelos murinos), redução de NF-κB documentada explicitamente. Claim do usuário está alinhado e já devidamente cauteloso. |
+| **BPC-157** | "pesquisado em modelos pré-clínicos ligados a reparação tecidual, tendões e processos angiogênicos" | **Alinhado** — docs confirmam que toda evidência localizada é pré-clínica, sem RCT humano publicado localizado. O rascunho já enquadra corretamente como "modelos pré-clínicos", não como fato estabelecido. |
+| **GHK-Cu** | "remodelação da matriz extracelular, síntese de colágeno e reparação tecidual" | **Alinhado, com ressalva.** Docs têm uma revisão mecanística verificada (Pickart & Margolina, PMID 29986520) que sustenta esse mecanismo, mas o único RCT humano verificado (PMID 16847171, N=13, uso tópico) teve **resultado objetivo neutro** (sem diferença estatística em rugas/eritema, só satisfação subjetiva). O claim do rascunho usa "associado em estudos" (não "comprovado"), o que é o enquadramento correto — mantenho como está. |
+| **TB-500** | "migração celular, dinâmica do citoesqueleto e cicatrização em estudos experimentais" | **Lacuna sinalizada, não bloqueante.** `docs/pesquisa/cientifico.md` não tem, até hoje, nenhum PMID verificado especificamente para o mecanismo do TB-500 (o arquivo registra explicitamente que "não foi reavaliado" e que precisa de verificação dedicada se entrar em ranking futuro). O claim é a caracterização mecanística padrão da literatura sobre Timosina Beta-4, e o rascunho já usa linguagem cautelosa ("estudos experimentais") — mantenho o texto do usuário, mas recomendo ao Strategic Manager acionar o Research Manager para verificar PMIDs diretos de TB-500 antes de qualquer peça futura que dependa mais pesadamente desse componente isoladamente. |
+
+**Disclaimer do blend (Slide 2, rodapé):** o texto do usuário — "Os efeitos apresentados são derivados de estudos dos componentes individuais. O blend KLOW, como combinação, ainda não possui estudos clínicos controlados que comprovem sua eficácia." — **confere exatamente** com o que está registrado em `docs/pesquisa/cientifico.md` ("evidência de cada componente isolado... não constitui evidência da combinação KLOW. Não foram localizados estudos clínicos do blend KLOW como um todo."). Mantido verbatim.
+
+### Ajuste 4 — legenda: remoção de "consulte a disponibilidade" e hashtags excessivas
+
+Mesma lógica do Ajuste 1 aplicada à legenda. Além disso, todas as peças aprovadas anteriormente (TG 60mg, Semax/Selank, carrossel de evidência) usam uma única hashtag (`#AurumPeptide`) — as 10 hashtags do rascunho (`#KLOW #Peptides #PeptideResearch #GHKCu #BPC157 #TB500 #KPV #Biotech #PeptideScience`) destoam desse padrão editorial/premium já estabelecido e soam mais como perfil de e-commerce genérico do nicho. Reduzi para o padrão único já validado — se o usuário quiser retomar hashtags de descoberta, é uma decisão de estratégia de alcance a validar com o Strategic Manager, não um ajuste de tom que eu deva presumir.
+
+Também adicionei ao final da legenda o disclaimer regulatório completo (uso exclusivo para pesquisa + "não constitui indicação de uso"), ausente no rascunho original da legenda — presente no Slide 4 mas não seria replicado automaticamente pelo texto da legenda, que muitas vezes é lido isoladamente (preview do feed, compartilhamentos).
+
+---
+
+### BRIEF FINAL — pronto para o Designer Manager
+
+**Formato técnico:** carrossel de **4 artes**, proporção 4:5 (1080×1350px), Instagram + réplica idêntica na Página do Facebook (`docs/marca.md`, ambos canais ativos).
+
+#### Slide 1 — Capa
+
+- **Título** (serif, dourado `#C6A55A`): **"QUATRO MECANISMOS. UMA MESMA LINHA DE PESQUISA."**
+- **Subtítulo** (sans-serif, branco gelo, menor, abaixo do título): **"KLOW 80MG — GHK-Cu • BPC-157 • TB-500 • KPV"**
+- **Chamada** (sans-serif, discreta, próxima à base): **"Conheça a ciência por trás da combinação."**
+- **Visual:** ver "Lacuna de imagem do produto" no briefing visual abaixo — se não houver foto real aprovada do KLOW 80mg, usar motivo gráfico da molécula dourada (mesmo critério já usado para o TG 60mg em 28/07, Lacuna 3 daquela entrada), nunca fabricar rótulo/embalagem/selo que não existam de fato.
+
+#### Slide 2 — O que existe por trás do KLOW (sem alterações de conteúdo em relação ao rascunho do usuário — já correto)
+
+- **Título** (serif, dourado): **"O QUE EXISTE POR TRÁS DO KLOW?"**
+- **Corpo** (sans-serif, branco gelo), 4 blocos, um por componente:
+  - **GHK-Cu:** associado em estudos à remodelação da matriz extracelular, síntese de colágeno e reparação tecidual.
+  - **BPC-157:** pesquisado em modelos pré-clínicos ligados a reparação tecidual, tendões e processos angiogênicos.
+  - **TB-500:** relacionado à migração celular, dinâmica do citoesqueleto e cicatrização em estudos experimentais.
+  - **KPV:** pesquisado por modular vias inflamatórias, incluindo sinalização relacionada ao NF-κB.
+- **Conceito visual:** 4 componentes convergindo visualmente para os termos **"REPARAÇÃO • REGENERAÇÃO • MODULAÇÃO INFLAMATÓRIA"**.
+- **Rodapé (fonte pequena, mas legível — não miniaturizar a ponto de ficar ilegível):** **"Os efeitos apresentados são derivados de estudos dos componentes individuais. O blend KLOW, como combinação, ainda não possui estudos clínicos controlados que comprovem sua eficácia."**
+
+#### Slide 3 — Principais eixos de pesquisa (pequeno ajuste de precisão, sem mudança de estrutura)
+
+- **Título** (serif, dourado): **"POR QUE O KLOW DESPERTA TANTO INTERESSE?"**
+- **4 blocos** (sans-serif):
+  - Reparação Tecidual
+  - Matriz e Colágeno (GHK-Cu)
+  - Modulação Inflamatória (KPV)
+  - **Migração e Dinâmica Celular (BPC-157/TB-500)** — ajustado de "Migração e Regeneração Celular" para "Migração e Dinâmica Celular", termo mais preciso e alinhado à linguagem mecanística documentada (`docs/pesquisa/cientifico.md`), evitando a palavra "Regeneração" duplicada de forma que possa soar como promessa de resultado.
+- **Destaque** (serif ou sans-serif em caixa alta, dourado): **"4 PEPTÍDEOS / 4 MECANISMOS / 1 BLEND DE PESQUISA"**
+- **Restrição mantida integralmente:** nunca usar "cura", "garante resultados", "elimina inflamação", "regenera músculos" ou qualquer promessa terapêutica — confirmado ausente no texto acima.
+
+#### Slide 4 — Fechamento (reescrito — ver Ajuste 1 e 2)
+
+- **Título** (serif, dourado): **"KLOW 80MG"**
+- **Subtítulo** (sans-serif, branco gelo): **"Ciência em uma combinação de quatro peptídeos de pesquisa."**
+- **Destaque** (dourado, caixa alta ou versal): **"GHK-Cu + BPC-157 + TB-500 + KPV"**
+- **Disclaimer regulatório (visualmente legível, não decorativo):** **"Produto destinado exclusivamente à pesquisa. Não destinado ao uso humano. Este conteúdo é informativo e não constitui indicação de uso."**
+- **CTA (substitui "CONSULTE DISPONIBILIDADE"):** **"Dúvidas sobre o KLOW? Fale com a Aurum Peptide pelo WhatsApp ou no Grupo VIP — link na bio."**
+- **Assinatura de marca:** "Aurum Peptide — Ciência • Pureza • Excelência"
+- **Logo:** lockup completo (`assets/logo-oficial-com-nome.png`) centralizado, fechando a peça.
+
+#### Legenda final (idêntica Instagram/Facebook)
+
+> KLOW 80mg: quatro peptídeos reunidos em uma única formulação de pesquisa. 🧬
+>
+> GHK-Cu, BPC-157, TB-500 e KPV são estudados individualmente por diferentes mecanismos relacionados à remodelação tecidual, matriz extracelular, migração celular e modulação inflamatória.
+>
+> O diferencial está na combinação de diferentes frentes de pesquisa em uma única formulação — a evidência de cada componente isolado não constitui evidência da combinação como um todo, já que não existem, até hoje, estudos clínicos controlados do blend KLOW.
+>
+> Produto destinado exclusivamente à pesquisa. Não destinado ao uso humano. Este conteúdo é informativo e não substitui avaliação de profissional de saúde habilitado.
+>
+> Dúvidas sobre o KLOW? Fale com a gente pelo WhatsApp (link na bio) ou no Grupo VIP.
+>
+> #AurumPeptide
+
+### Briefing visual para o Designer Manager
+
+Referência normativa: `docs/identidade-visual.md`, aplicar integralmente — este briefing só destaca pontos críticos e ajustes desta peça específica.
+
+- **Fundo (todas as 4 artes):** paleta oficial — verde profundo institucional `#0D1B16` e/ou verde esmeralda escuro `#0F2E25`, gradiente radial muito suave, glow central inferior sutil, textura leve tipo canvas premium. **Ajuste ao rascunho:** o usuário pediu "fundo verde profundo/preto" — usar apenas os hex oficiais acima (nunca preto puro/`#000000`), para manter unidade com o sistema visual já usado em todas as peças anteriores da marca. Se possível, reaproveitar assets de fundo já validados em produções anteriores (ex.: `docs/design/2026-07-28-tg60mg/raw/bg-gemini-01.png`), em vez de gerar um novo do zero, salvo se o Designer Manager avaliar que a estética "laboratório" pedida pelo usuário exige um fundo dedicado.
+- **Paleta de texto/acento:** dourado premium `#C6A55A` para títulos (serif); branco gelo para corpo (sans-serif); grafite escuro como contraste alternativo. Nunca roxo, azul vibrante, vermelho chamativo, neon ou gradientes exagerados.
+- **Elementos científicos sutis** (moléculas, estruturas químicas, traços de DNA): permitido e alinhado ao pedido do usuário, desde que discretos e dourados/monocromáticos — nunca coloridos, nunca com aparência "clínica fria" ou "farmácia genérica". Evitar seringa, agulha, comprimido, jaleco ou ícones de "check" de laboratório clínico (mesma restrição já aplicada ao TG 60mg).
+- **Tipografia:** título serif elegante e sofisticada; corpo sans-serif limpa e moderna; espaçamento amplo, respiro visual generoso — carrossel deve parecer editorial/matéria científica, não anúncio.
+- **Logo:** lockup completo (`assets/logo-oficial-com-nome.png`) no Slide 1 (capa) e Slide 4 (fechamento); marca d'água da molécula (`assets/logo-oficial.png`, opacidade 5–15%, sem sombra/contorno/3D) pode aparecer sutil nos Slides 2–3. Nunca distorcer, alterar proporção/cor ou criar variações da molécula.
+- **Lacuna de imagem do produto (Slide 1):** o rascunho do usuário pede "frasco/produto KLOW em destaque, fotográfico e premium". **Não tenho confirmação nesta tarefa de que existe foto real aprovada do KLOW 80mg** (mesmo problema já registrado para o TG 60mg em 28/07 — fotos incorretas no Supabase). Se não houver foto real confirmada, usar o mesmo critério já validado: motivo gráfico da molécula dourada / silhueta elegante genérica, sem rótulo, embalagem ou selo de certificação fabricados. Confirmar com o usuário/Strategic Manager antes de compor o Slide 1.
+- **Disclaimer do Slide 4:** dar peso visual real (tamanho de fonte legível no feed, não miniaturizado) — ver "Achado regulatório" acima; este texto não é um detalhe estético, é proteção regulatória.
+- **Proibido em qualquer uma das 4 artes:** preço, "disponível para venda"/"disponível para clientes Aurum", "consulte disponibilidade" ou qualquer variação equivalente.
+- **Mood geral:** editorial, minimalista, institucional, premium, estética de laboratório/biotech de alto padrão — como matéria de revista científica, não anúncio de lançamento.
+
+### Verificações contra as regras da marca
+
+- **Nenhum preço, nenhuma "disponibilidade"/"disponível para venda"** em nenhuma das 4 artes nem na legenda — CTA convertido para redirecionamento de canal (WhatsApp/Grupo VIP), conforme `docs/tom-de-voz.md`.
+- **Nenhuma promessa terapêutica** ("cura", "garante resultados", "elimina inflamação", "regenera músculos") — confirmado ausente em todos os slides.
+- **Nenhuma urgência artificial** (`docs/valores.md`) — confirmado ausente.
+- **Disclaimer do blend (Slide 2) e disclaimer regulatório de uso exclusivo para pesquisa (Slide 4 e legenda)** presentes e verificados contra `docs/pesquisa/cientifico.md` e `docs/pesquisa/regulatorio.md`.
+- **Capa e fechamento não usam o produto como manchete de lançamento** — abrem com gancho científico (Slide 1) e fecham com convite institucional, não com "oferta" (Slide 4).
+- **Claims científicos checados linha a linha contra `docs/pesquisa/cientifico.md`** — ver tabela no Ajuste 3; único gap é TB-500 sem PMID verificado no momento, sinalizado sem bloquear.
+- **Identidade visual** (`docs/identidade-visual.md`) aplicada integralmente; único ajuste ao pedido do usuário foi remover "preto" do fundo em favor dos hex oficiais da paleta.
+
+### Status
+
+- [x] Copy final das 4 artes + legenda produzida e verificada contra `docs/marca.md`, `docs/missao.md`, `docs/valores.md`, `docs/tom-de-voz.md`, `docs/avatar-do-cliente.md`, `docs/objetivos.md`.
+- [x] Precisão científica verificada linha a linha contra `docs/pesquisa/cientifico.md` — ver tabela no Ajuste 3 (3 de 4 componentes bem respaldados, TB-500 com lacuna de PMID sinalizada, não bloqueante).
+- [x] Achado regulatório (ANVISA cita GHK-Cu/BPC-157/TB-500 nominalmente como não regularizados; KPV também sem registro) identificado e sinalizado como ponto de atenção elevado em relação ao precedente TG 60mg.
+- [x] Briefing visual completo preparado para o Designer Manager, incluindo lacuna de imagem real do produto.
+- [ ] **Recomendo aprovação explícita do Strategic Manager (CMO) e do usuário antes de acionar o Designer Manager** — por causa do achado regulatório acima (não por qualidade da copy, que já está pronta), mesmo padrão de cautela já usado para o TG 60mg em 18/08/2026.
+- [ ] Confirmar com o usuário/Strategic Manager se existe foto real aprovada do produto físico KLOW 80mg para o Slide 1, ou se segue o critério de motivo gráfico/silhueta (sem foto).
+- [ ] Confirmar dados de catálogo do KLOW 80mg no Supabase (produto ativo, categoria) — não verificado nesta tarefa por falta de acesso a ferramentas de banco/site.
+- [ ] Sinalizar ao Strategic Manager a possível necessidade de atualizar `docs/marca.md` com a linha "reparação/regeneração tecidual", se o KLOW for confirmado como nova categoria do portfólio.
+- [ ] Sinalizar ao Research Manager (via Strategic Manager) a pendência de verificação direta de PMID para o mecanismo do TB-500, útil para reforçar peças futuras sobre este componente.
+- [ ] Designer Manager: não acionado ainda — aguardando aprovação acima.
+- [ ] Publishing Manager: não acionado — aguardando execução da peça pelo Designer Manager e aprovação de publicação.

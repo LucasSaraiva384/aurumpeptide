@@ -51,6 +51,15 @@ Quando utilizada:
 - **Texto:** sans-serif limpa e moderna.
 - Espaçamento amplo, respiro visual, hierarquia clara.
 
+### Tamanho e legibilidade (regra, feedback do usuário em 2026-08-25)
+
+O usuário sinalizou que o texto de corpo das peças (ex.: carrossel KLOW 80mg) ficou pequeno demais e que o título principal do carrossel precisa se destacar mais. A partir de agora, em toda peça:
+
+- **Título principal do carrossel/post (capa):** deve ser o elemento tipográfico dominante da peça — grande o suficiente para ser lido instantaneamente em miniatura no feed do celular, claramente maior em proporção do que qualquer outro texto da peça.
+- **Texto de corpo (explicações, benefícios, legendas dentro da arte):** priorizar tamanho generoso mesmo que isso signifique reduzir a quantidade de texto por slide. Nunca sacrificar legibilidade no celular por caber mais conteúdo.
+- Rodapés/disclaimers regulatórios continuam podendo ser discretos (fonte menor), mas o restante da hierarquia (título, subtítulo, corpo) deve favorecer tamanhos maiores por padrão daqui em diante.
+- Antes de finalizar qualquer peça, o Designer Manager deve testar a visualização em miniatura (tamanho de feed) e confirmar que título e corpo são legíveis sem precisar ampliar a imagem.
+
 ## Estilo visual geral
 
 O design deve ser:
