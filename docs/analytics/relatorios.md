@@ -4,6 +4,85 @@ Log cronológico do Analytics Manager sobre o progresso das duas métricas-guia 
 
 ---
 
+## 31/08/2026 — Desempenho do carrossel de produto KLOW 80MG (publicado 25/08/2026) — Instagram e Facebook
+
+### Contexto e pedido
+
+Pedido do Strategic Manager: medir o desempenho do carrossel de produto KLOW 80MG (GHK-Cu + BPC-157 + TB-500 + KPV), publicado em 25/08/2026 (`docs/publicacao/log.md`, entrada "2026-08-25"). Primeiro post real de produto do ecossistema efetivamente **ao vivo** nos dois canais no momento da coleta — o único post de produto anterior (TG 60mg, 18/08) foi apagado do Instagram pelo usuário no mesmo dia da publicação (ver achado abaixo sobre o Facebook). Método: `GET /{media-id}` e `GET /{ig-user-id}/media` no Instagram; `GET /{page-id}/feed` (com token de Página, resolvido automaticamente pelo script) no Facebook — ambos via `scripts/meta_graph.py`, credenciais lidas só do `.env`. Coleta feita ~6 dias após a publicação (25/08 16:01 UTC → coleta em 31/08).
+
+### Dado real — Instagram, media KLOW 80MG (`18405892105085071`)
+
+`GET /18405892105085071?fields=id,media_type,media_product_type,caption,permalink,timestamp,like_count,comments_count`:
+
+| Métrica | Valor |
+|---|---|
+| Tipo | `CAROUSEL_ALBUM`, 4 artes |
+| Publicado em | 2026-08-25T16:01:51+0000 (≈13:01 BRT) |
+| Curtidas | 4 |
+| Comentários | 0 |
+| Tempo no ar até a coleta | ≈6 dias |
+
+**Insights de alcance/salvamentos/compartilhamentos: bloqueados.** `GET /18405892105085071/insights --param metric=reach,saved,shares,total_interactions,profile_visits,follows` retornou o mesmo erro já registrado em 17/08/2026: `(#10) Application does not have permission for this action`. Segue sem resolução — o app/token não tem `instagram_manage_insights` efetivamente ativa, apesar de listada como escopo desejado em `docs/integracoes/meta.md`. Não tenho, e não estimo, alcance, impressões, saves ou compartilhamentos deste post.
+
+### Dado real — Facebook (Página), post KLOW 80MG (`1186905547834934_122127630399356392`)
+
+Chamada direta `GET /1186905547834934_122127630399356392` (token de System User) falhou com `(#10) This endpoint requires the 'pages_read_engagement' permission or the 'Page Public Content Access' feature` — mesma limitação já sinalizada em 18/08/2026 no log de publicação. **Contornado** consultando `GET /{page-id}/feed --param fields=id,created_time,likes.summary(true),comments.summary(true),shares,reactions.summary(true)`, que usa automaticamente o Page Access Token (resolvido pelo script para endpoints `/{page-id}/...`) e retornou dado real:
+
+| Post (Facebook) | Curtidas | Comentários | Reações | Compartilhamentos |
+|---|---|---|---|---|
+| KLOW 80mg (25/08) | 0 | 0 | 0 | 0 (campo ausente = zero) |
+| TG 60mg (18/08) | 0 | 0 | 0 | 0 |
+| Semax vs. Selank republicado (17/08) | 0 | 0 | 0 | 0 |
+
+**Achado relevante para o log de publicação:** o post TG 60mg (`1186905547834934_122125795449356392`) **continua ao vivo na Página do Facebook** (`created_time` confirmado no retorno) — resolve a pendência registrada em `docs/publicacao/log.md` ("Não confirmado se também foi removida da Página do Facebook"). O usuário apagou o post apenas do Instagram; no Facebook ele segue publicado, com zero engajamento.
+
+**Leitura sobre o Facebook, separando dado de interpretação:** dado real — os últimos 3 posts do ecossistema no Facebook (incluindo o KLOW) têm zero curtidas, zero comentários, zero reações, zero compartilhamentos, sem exceção. Isso não é amostra pequena — é 3 de 3. Ainda não caracterizo isso como "Facebook não funciona para a marca" (não tenho como saber se é alcance orgânico baixo da Página, falta de distribuição do algoritmo, ou audiência que simplesmente não está lá) — mas é um padrão consistente o suficiente para sinalizar.
+
+### Comparação com os demais posts reais do ecossistema (Instagram)
+
+`GET /{ig-user-id}/media` (limit 8), dado real, reordenado por data:
+
+| Data | Media ID | Tipo de conteúdo | Curtidas | Comentários | Tempo no ar na coleta |
+|---|---|---|---|---|---|
+| 25/08/2026 | `18405892105085071` | **KLOW 80mg — produto (CTA WhatsApp/Grupo VIP)** | 4 | 0 | ≈6 dias |
+| 17/08/2026 | `18113777833767779` | Educacional (Semax vs. Selank, republicado) | 4 | 0 | ≈14 dias |
+| 12/08/2026 | `17955403536215292` | Educacional ("Evidência não é igual para todos") | 5 | 0 | ≈19 dias |
+
+**TG 60mg (18/08) não aparece nesta lista** — confirma, mais uma vez com dado direto da API, que segue apagado do Instagram (só o Facebook mantém o post, ver acima).
+
+**Conta (snapshot atual):**
+
+| Métrica | 17/08/2026 | 31/08/2026 | Variação |
+|---|---|---|---|
+| Seguidores | 965 | 991 | +26 (+2,7%) em 14 dias |
+| Total de posts no feed | 15 | 16 | +1 |
+
+### Engajamento calculado (base: seguidores atuais — 991; alcance indisponível, mesma limitação de 17/08)
+
+Fórmula: (curtidas + comentários) ÷ seguidores atuais. Sem dado de saves/shares/alcance (insights bloqueados) — engajamento parcial, subestimado frente à fórmula completa do agente.
+
+- **KLOW 80mg (25/08, produto):** 4 ÷ 991 ≈ **0,40%**
+- **Semax vs. Selank republicado (17/08, educacional):** 4 ÷ 991 ≈ **0,40%**
+- **"Evidência não é igual para todos" (12/08, educacional):** 5 ÷ 991 ≈ **0,50%**
+
+### Leitura / interpretação (separando dado de cálculo e de interpretação)
+
+- **Dado real:** o KLOW 80mg é, até aqui, o primeiro post de produto do ecossistema com dado de desempenho real e mensurável — o TG 60mg nunca gerou dado utilizável (removido do Instagram no mesmo dia). Isso preenche a lacuna registrada em `docs/analytics/memoria/instagram-organico.md` desde 17/08 ("zero dado real de conteúdo de produto do ecossistema").
+- **Leitura, não conclusão:** com curtidas praticamente no mesmo patamar dos 2 posts educacionais anteriores (4 vs. 4 vs. 5, todos entre 0,40% e 0,50% de engajamento por seguidor), **não há, até agora, sinal de que o formato "produto educativo com CTA para WhatsApp/Grupo VIP" performe pior ou melhor que o formato puramente educacional em curtidas/comentários** — a amostra é pequena (n=3 no total, 1 post de produto) e a métrica mais relevante para esse formato especificamente (cliques para o WhatsApp/Grupo VIP) **não é medida por este pull** (seguem sem instrumentação — mesma limitação já registrada em 17/08).
+- **Comentários seguem em zero em todos os 3 posts do ecossistema no Instagram** — nenhum gerou conversa na caixa de comentários até aqui, incluindo os 2 que pediam explicitamente "conta pra gente nos comentários" como CTA.
+- **Facebook, dado real e consistente (3 de 3 posts):** zero engajamento de qualquer tipo em todos os posts do ecossistema publicados na Página até hoje. Diferente do Instagram, aqui não há nem o engajamento mínimo observado.
+
+### Alerta para o Strategic Manager (CMO)
+
+- **Pode esperar o próximo ciclo, não é urgente:** o desempenho do KLOW 80mg em curtidas/comentários está dentro do mesmo patamar (baixo, mas não atípico) já observado nos 2 posts educacionais anteriores do ecossistema — não há sinal de rejeição do público nem de queda anômala que justifique ação imediata.
+- **Requer atenção quando houver capacidade — pendência técnica recorrente:** insights de Instagram (alcance, saves, compartilhamentos) seguem bloqueados por permissão (`code 10`) desde 17/08/2026, sem resolução em duas coletas seguidas. Sem isso, não consigo medir a métrica mais relevante para avaliar de fato o CTA do KLOW (cliques/saída para WhatsApp), que é justamente o objetivo de negócio do post conforme `docs/objetivos.md`. Recomendo revisitar o escopo `instagram_manage_insights` do app/token.
+- **Sinal a observar, não decisão:** zero engajamento em 3 de 3 posts do ecossistema no Facebook (incluindo TG 60mg, que segue no ar lá mesmo tendo sido apagado do Instagram). Ainda é amostra pequena para tratar como "Facebook não funciona", mas é um padrão consistente o suficiente para o CMO avaliar se vale investimento de atenção adicional nesse canal frente ao Instagram, que ao menos tem curtidas reais.
+- **Achado operacional para o Publishing Manager/CMO, não uma decisão minha:** o post TG 60mg segue publicado na Página do Facebook, mais de duas semanas depois de ter sido removido do Instagram pelo mesmo motivo de conteúdo (rejeitado pelo usuário). Sinalizo a inconsistência entre os dois canais para quem decide se isso deve ser corrigido.
+
+Leitura consolidada atualizada em `docs/analytics/memoria/instagram-organico.md` (horário de publicação, contagem de posts, comparação de curtidas/engajamento).
+
+---
+
 ## 17/08/2026 — Instagram (@aurumpeptide): primeira leitura real de desempenho via Meta Graph API — legado vs. ecossistema
 
 ### Contexto e pedido
