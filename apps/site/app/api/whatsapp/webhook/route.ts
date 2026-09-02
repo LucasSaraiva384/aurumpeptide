@@ -46,18 +46,33 @@ const URL_BANNER_BOAS_VINDAS = `${SITE_URL}/whatsapp-banner-boas-vindas.png`;
 const BOTAO_ID_GRUPO = "entrar_grupo";
 const BOTAO_ID_VENDEDOR = "falar_vendedor";
 
-const MENSAGEM_GRUPO_VIP = `🔥 Aqui está o link do nosso grupo exclusivo no WhatsApp, onde divulgamos promoções, oportunidades e condições especiais antes de qualquer outro canal:
+const MENSAGEM_GRUPO_VIP = `🚨 PROMOÇÃO AURUM PEPTIDE COMEÇOU! 🧬🔥
 
-👇 Entre pelo link:
+As condições especiais da Aurum Peptide já estão liberadas! 🤩
+
+🔥 Peptídeos em destaque:
+• GHK-Cu
+• GLOW
+• KLOW
+• MOTS-C
+• RETATRUTIDA
+• TIRZEPATIDA
+
+💎 Condições exclusivas por tempo limitado
+⏳ Aproveite enquanto durarem os estoques!
+
+👉 Confira todas as promoções pelo nosso grupo:
 
 https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb?s=cl&p=i&mlu=0
 
-A participação é gratuita e as condições divulgadas no grupo podem ser por tempo ou estoque limitado.`;
+📋 Tabela completa e novidades fixadas no grupo!
 
+Aurum Peptide — Ciência • Pureza • Excelência 🧬⚜️`;
+
+const MENSAGEM_FALAR_VENDEDOR = "Perfeito! 🙌 Toque no botão abaixo pra falar direto com um vendedor:";
+const TEXTO_BOTAO_VENDEDOR = "Fala com vendedor";
 // Número do vendedor: +55 15 98189-0060.
-const MENSAGEM_FALAR_VENDEDOR = `Perfeito! 🙌 Você já pode falar diretamente com um de nossos vendedores por aqui:
-
-https://wa.me/5515981890060`;
+const URL_WHATSAPP_VENDEDOR = "https://wa.me/5515981890060";
 
 // -- Payload do webhook da Meta (só os campos usados aqui) --
 // https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/payload-examples
@@ -227,9 +242,12 @@ async function processarMensagem(mensagem: MetaMessage, contato?: MetaContact): 
 /** Reage ao clique num dos botões da mensagem de boas-vindas, enviando o link correspondente. */
 async function processarCliqueBotao(waId: string, botaoId: string | undefined): Promise<void> {
   if (botaoId === BOTAO_ID_GRUPO) {
+    // Link puro do grupo no corpo do texto — o próprio WhatsApp renderiza
+    // como cartão nativo com botão "Entrar no grupo", sem precisar de botão
+    // customizado aqui.
     await enviarMensagemTexto(waId, MENSAGEM_GRUPO_VIP);
   } else if (botaoId === BOTAO_ID_VENDEDOR) {
-    await enviarMensagemTexto(waId, MENSAGEM_FALAR_VENDEDOR);
+    await enviarMensagemCtaUrl(waId, MENSAGEM_FALAR_VENDEDOR, TEXTO_BOTAO_VENDEDOR, URL_WHATSAPP_VENDEDOR);
   }
 }
 
@@ -367,6 +385,30 @@ async function enviarMensagemBotoes(
     return true;
   } catch (erro) {
     console.error("[whatsapp/webhook] erro ao enviar mensagem com botões:", erro);
+    return false;
+  }
+}
+
+/** Botão único que abre um link (ex.: WhatsApp do vendedor) — a Cloud API limita a 20 caracteres no texto do botão. */
+async function enviarMensagemCtaUrl(waId: string, texto: string, textoBotao: string, url: string): Promise<boolean> {
+  try {
+    const waMessageId = await chamarGraphApiMensagens({
+      messaging_product: "whatsapp",
+      to: waId,
+      type: "interactive",
+      interactive: {
+        type: "cta_url",
+        body: { text: texto },
+        action: {
+          name: "cta_url",
+          parameters: { display_text: textoBotao, url },
+        },
+      },
+    });
+    await registrarMensagem(waId, "enviada", "interactive", texto, waMessageId);
+    return true;
+  } catch (erro) {
+    console.error("[whatsapp/webhook] erro ao enviar mensagem com botão de link:", erro);
     return false;
   }
 }
