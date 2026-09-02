@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { after, NextRequest, NextResponse } from "next/server";
-import { isSupabaseAdminConfigured, supabaseAdmin, type WhatsappContato } from "@/lib/supabaseAdmin";
+import { processarMensagemRecebida } from "@/lib/whatsappAutomacao";
 
 // Precisa do módulo `crypto` do Node pra validar a assinatura HMAC — não
 // roda em edge runtime.
@@ -10,69 +10,15 @@ export const runtime = "nodejs";
 // daí o maxDuration, acima do timeout padrão de 10s do plano Hobby.
 export const maxDuration = 30;
 
-const META_API_VERSION = process.env.META_API_VERSION || "v21.0";
-const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
-const META_WHATSAPP_PHONE_NUMBER_ID = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
 const META_APP_SECRET = process.env.META_APP_SECRET;
 const WHATSAPP_WEBHOOK_VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aurumpeptide.com.br";
 // URL do webhook do Chatwoot (self-hosted) pra onde espelhamos o payload bruto
-// da Meta — mantém a automação de boas-vindas aqui, e alimenta o Chatwoot em
-// paralelo pra monitoramento/resposta manual. Ver docs/publicacao/log.md.
+// da Meta, só como registro/backup — hoje o Chatwoot já recebe o tráfego real
+// direto por conta própria (ver apps/site/app/api/chatwoot/webhook/route.ts),
+// então este webhook só recebe tráfego de admins/testers do app "Aurum A.I"
+// (limitação de app não publicado — deixado de lado por ora, ver
+// docs/publicacao/log.md).
 const CHATWOOT_WHATSAPP_WEBHOOK_URL = process.env.CHATWOOT_WHATSAPP_WEBHOOK_URL;
-// API do Chatwoot — só pra registrar confirmação de envio como nota privada
-// (nunca reenvia de verdade). Ver registrarConfirmacaoNoChatwoot.
-const CHATWOOT_BASE_URL = process.env.CHATWOOT_BASE_URL;
-const CHATWOOT_API_ACCESS_TOKEN = process.env.CHATWOOT_API_ACCESS_TOKEN;
-const CHATWOOT_ACCOUNT_ID = process.env.CHATWOOT_ACCOUNT_ID;
-const CHATWOOT_INBOX_ID = process.env.CHATWOOT_INBOX_ID;
-
-// Sequência de boas-vindas aprovada pelo usuário em 2026-09-02 — uma única
-// mensagem interativa com 2 botões (estilo confirmado pelo usuário a partir
-// de referência de concorrente), substituindo a versão anterior de 3
-// mensagens de texto + PDF. Tabela de preços em PDF fica de fora por ora.
-// Ajustar texto/botões é só editar as constantes abaixo.
-const MENSAGEM_1_BOAS_VINDAS = `Olá! Tudo bem? 😊
-
-Temos uma novidade para você! 🧬
-
-Gostaria de conhecer a linha premium de peptídeos da Aurum Peptide?
-
-Posso te enviar mais informações?`;
-
-// Banner exibido como cabeçalho da mensagem de boas-vindas (ver enviarBoasVindas) — arquivo em apps/site/public/.
-const URL_BANNER_BOAS_VINDAS = `${SITE_URL}/whatsapp-banner-boas-vindas.png`;
-
-const BOTAO_ID_GRUPO = "entrar_grupo";
-const BOTAO_ID_VENDEDOR = "falar_vendedor";
-
-const MENSAGEM_GRUPO_VIP = `🚨 PROMOÇÃO AURUM PEPTIDE COMEÇOU! 🧬🔥
-
-As condições especiais da Aurum Peptide já estão liberadas! 🤩
-
-🔥 Peptídeos em destaque:
-• GHK-Cu
-• GLOW
-• KLOW
-• MOTS-C
-• RETATRUTIDA
-• TIRZEPATIDA
-
-💎 Condições exclusivas por tempo limitado
-⏳ Aproveite enquanto durarem os estoques!
-
-👉 Confira todas as promoções pelo nosso grupo:
-
-https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb?s=cl&p=i&mlu=0
-
-📋 Tabela completa e novidades fixadas no grupo!
-
-Aurum Peptide — Ciência • Pureza • Excelência 🧬⚜️`;
-
-const MENSAGEM_FALAR_VENDEDOR = "Perfeito! 🙌 Toque no botão abaixo pra falar direto com um vendedor:";
-const TEXTO_BOTAO_VENDEDOR = "Fala com vendedor";
-// Número do vendedor: +55 15 98189-0060.
-const URL_WHATSAPP_VENDEDOR = "https://wa.me/5515981890060";
 
 // -- Payload do webhook da Meta (só os campos usados aqui) --
 // https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/payload-examples
@@ -102,7 +48,7 @@ type MetaMessage = {
   type: string;
   text?: { body?: string };
   // Presente quando `type === "interactive"` e a pessoa clicou num botão de
-  // resposta rápida (ver MENSAGEM_1_BOAS_VINDAS/enviarMensagemBotoes).
+  // resposta rápida.
   interactive?: { type?: string; button_reply?: { id: string; title: string } };
 };
 
@@ -138,9 +84,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // — se a resposta do webhook demorasse até o fim do processamento
   // (chamadas à Graph API/Chatwoot), a Meta poderia interpretar como falha e
   // reentregar o mesmo webhook (retry), disparando o envio duas vezes em
-  // paralelo. A trava atômica em reivindicarBoasVindas cobre esse cenário de
-  // qualquer forma, mas responder rápido evita o retry na origem. Qualquer
-  // erro de processamento é logado, nunca propagado — sempre 200.
+  // paralelo. A trava atômica em reivindicarBoasVindas (dentro de
+  // processarMensagemRecebida) cobre esse cenário de qualquer forma, mas
+  // responder rápido evita o retry na origem. Qualquer erro de
+  // processamento é logado, nunca propagado — sempre 200.
   try {
     const payload = JSON.parse(corpoBruto) as MetaWebhookPayload;
     after(() =>
@@ -156,9 +103,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 /**
  * Espelha o payload bruto (mesmo formato que a Meta manda) pro webhook do
- * Chatwoot self-hosted, pra alimentar a inbox de monitoramento/resposta
- * manual. Nunca lança — uma falha aqui não pode impedir a automação de
- * boas-vindas acima de rodar.
+ * Chatwoot self-hosted, como registro/backup. Nunca lança — uma falha aqui
+ * não pode impedir a automação de boas-vindas acima de rodar.
  */
 async function repassarParaChatwoot(corpoBruto: string): Promise<void> {
   if (!CHATWOOT_WHATSAPP_WEBHOOK_URL) return;
@@ -216,303 +162,17 @@ async function processarPayload(payload: MetaWebhookPayload): Promise<void> {
 }
 
 async function processarMensagem(mensagem: MetaMessage, contato?: MetaContact): Promise<void> {
-  const waId = mensagem.from;
-  const nomePerfil = contato?.profile?.name ?? null;
+  const botaoClicadoId =
+    mensagem.type === "interactive" && mensagem.interactive?.type === "button_reply"
+      ? mensagem.interactive.button_reply?.id
+      : undefined;
 
-  await registrarMensagem(waId, "recebida", mensagem.type, mensagem.text?.body ?? null, mensagem.id);
-  await buscarOuCriarContato(waId, nomePerfil);
-
-  // Clique num botão da mensagem de boas-vindas — independente de já ter
-  // reivindicado as boas-vindas antes (é sempre uma mensagem subsequente).
-  if (mensagem.type === "interactive" && mensagem.interactive?.type === "button_reply") {
-    await processarCliqueBotao(waId, mensagem.interactive.button_reply?.id);
-    return;
-  }
-
-  // Reivindica atomicamente o direito de enviar as boas-vindas (UPDATE
-  // condicional no banco, não um "SELECT depois UPDATE" separado) — só
-  // quem conseguir marcar a linha ainda não marcada deve enviar. Fecha a
-  // janela de corrida caso a Meta reentregue o mesmo webhook (retry) antes
-  // da primeira execução terminar.
-  if (await reivindicarBoasVindas(waId)) {
-    await enviarBoasVindas(waId);
-  }
-}
-
-/** Reage ao clique num dos botões da mensagem de boas-vindas, enviando o link correspondente. */
-async function processarCliqueBotao(waId: string, botaoId: string | undefined): Promise<void> {
-  if (botaoId === BOTAO_ID_GRUPO) {
-    // Link puro do grupo no corpo do texto — o próprio WhatsApp renderiza
-    // como cartão nativo com botão "Entrar no grupo", sem precisar de botão
-    // customizado aqui.
-    await enviarMensagemTexto(waId, MENSAGEM_GRUPO_VIP);
-  } else if (botaoId === BOTAO_ID_VENDEDOR) {
-    await enviarMensagemCtaUrl(waId, MENSAGEM_FALAR_VENDEDOR, TEXTO_BOTAO_VENDEDOR, URL_WHATSAPP_VENDEDOR);
-  }
-}
-
-/**
- * Marca `boas_vindas_enviada_em` só se ainda estiver nulo, retornando se
- * esta chamada foi quem conseguiu marcar. Sem Supabase configurado, nunca
- * reivindica (não há como saber se é contato novo, então não arrisca
- * reenviar a cada mensagem enquanto a service_role key não é preenchida).
- */
-async function reivindicarBoasVindas(waId: string): Promise<boolean> {
-  if (!isSupabaseAdminConfigured) return false;
-
-  const { data, error } = await supabaseAdmin
-    .from("whatsapp_contatos")
-    .update({ boas_vindas_enviada_em: new Date().toISOString() })
-    .eq("wa_id", waId)
-    .is("boas_vindas_enviada_em", null)
-    .select("id")
-    .maybeSingle();
-
-  if (error) {
-    console.error("[whatsapp/webhook] erro ao reivindicar boas-vindas:", error);
-    return false;
-  }
-
-  return Boolean(data);
-}
-
-async function buscarOuCriarContato(waId: string, nomePerfil: string | null): Promise<WhatsappContato | null> {
-  if (!isSupabaseAdminConfigured) return null;
-
-  const { data: existente, error: erroBusca } = await supabaseAdmin
-    .from("whatsapp_contatos")
-    .select("*")
-    .eq("wa_id", waId)
-    .maybeSingle();
-
-  if (erroBusca) {
-    console.error("[whatsapp/webhook] erro ao buscar contato:", erroBusca);
-    return null;
-  }
-
-  if (existente) return existente;
-
-  const { data: novo, error: erroInsercao } = await supabaseAdmin
-    .from("whatsapp_contatos")
-    .insert({ wa_id: waId, nome_perfil: nomePerfil })
-    .select("*")
-    .single();
-
-  if (erroInsercao) {
-    console.error("[whatsapp/webhook] erro ao criar contato:", erroInsercao);
-    return null;
-  }
-
-  return novo;
-}
-
-async function registrarMensagem(
-  waId: string,
-  direcao: "recebida" | "enviada",
-  tipo: string,
-  corpo: string | null,
-  waMessageId: string | null,
-): Promise<void> {
-  if (!isSupabaseAdminConfigured) return;
-
-  const { error } = await supabaseAdmin.from("whatsapp_mensagens").insert({
-    wa_id: waId,
-    direcao,
-    tipo,
-    corpo,
-    wa_message_id: waMessageId,
+  await processarMensagemRecebida({
+    waId: mensagem.from,
+    nomePerfil: contato?.profile?.name ?? null,
+    tipo: mensagem.type,
+    corpo: mensagem.text?.body ?? null,
+    waMessageId: mensagem.id,
+    botaoClicadoId,
   });
-
-  if (error) {
-    console.error("[whatsapp/webhook] erro ao registrar mensagem:", error);
-  }
-}
-
-/**
- * Envia a mensagem de boas-vindas com os 2 botões (grupo VIP / falar com
- * vendedor) e registra no Chatwoot uma nota privada confirmando o envio. O
- * contato já foi marcado como atendido antes desta função rodar, em
- * reivindicarBoasVindas. Os links de cada opção só são enviados depois,
- * quando a pessoa clica no botão (ver processarCliqueBotao).
- */
-async function enviarBoasVindas(waId: string): Promise<void> {
-  const sucesso = await enviarMensagemBotoes(waId, MENSAGEM_1_BOAS_VINDAS, URL_BANNER_BOAS_VINDAS, [
-    { id: BOTAO_ID_GRUPO, title: "Entrar no grupo" },
-    { id: BOTAO_ID_VENDEDOR, title: "Falar com vendedor" },
-  ]);
-
-  await registrarConfirmacaoNoChatwoot(waId, [sucesso]);
-}
-
-async function enviarMensagemTexto(waId: string, texto: string): Promise<boolean> {
-  try {
-    const waMessageId = await chamarGraphApiMensagens({
-      messaging_product: "whatsapp",
-      to: waId,
-      type: "text",
-      text: { body: texto },
-    });
-    await registrarMensagem(waId, "enviada", "text", texto, waMessageId);
-    return true;
-  } catch (erro) {
-    console.error("[whatsapp/webhook] erro ao enviar mensagem de texto:", erro);
-    return false;
-  }
-}
-
-/** Botões de resposta rápida — a Cloud API limita a 3 por mensagem e 20 caracteres por título. */
-async function enviarMensagemBotoes(
-  waId: string,
-  texto: string,
-  urlImagemCabecalho: string,
-  botoes: { id: string; title: string }[],
-): Promise<boolean> {
-  try {
-    const waMessageId = await chamarGraphApiMensagens({
-      messaging_product: "whatsapp",
-      to: waId,
-      type: "interactive",
-      interactive: {
-        type: "button",
-        header: { type: "image", image: { link: urlImagemCabecalho } },
-        body: { text: texto },
-        action: {
-          buttons: botoes.map((botao) => ({ type: "reply", reply: botao })),
-        },
-      },
-    });
-    await registrarMensagem(waId, "enviada", "interactive", texto, waMessageId);
-    return true;
-  } catch (erro) {
-    console.error("[whatsapp/webhook] erro ao enviar mensagem com botões:", erro);
-    return false;
-  }
-}
-
-/** Botão único que abre um link (ex.: WhatsApp do vendedor) — a Cloud API limita a 20 caracteres no texto do botão. */
-async function enviarMensagemCtaUrl(waId: string, texto: string, textoBotao: string, url: string): Promise<boolean> {
-  try {
-    const waMessageId = await chamarGraphApiMensagens({
-      messaging_product: "whatsapp",
-      to: waId,
-      type: "interactive",
-      interactive: {
-        type: "cta_url",
-        body: { text: texto },
-        action: {
-          name: "cta_url",
-          parameters: { display_text: textoBotao, url },
-        },
-      },
-    });
-    await registrarMensagem(waId, "enviada", "interactive", texto, waMessageId);
-    return true;
-  } catch (erro) {
-    console.error("[whatsapp/webhook] erro ao enviar mensagem com botão de link:", erro);
-    return false;
-  }
-}
-
-const ROTULOS_CONFIRMACAO_CHATWOOT = ["Mensagem de boas-vindas (com botões)"];
-
-type ChatwootContatoBusca = { payload?: { id: number }[] };
-type ChatwootConversa = { id: number; inbox_id: number };
-type ChatwootConversasResposta = { payload?: ChatwootConversa[] };
-
-/**
- * Registra, como nota privada na conversa do Chatwoot (nunca dispara reenvio
- * real ao cliente — sempre `private: true`), um resumo de quais mensagens da
- * sequência de boas-vindas foram enviadas com sucesso. Só existe pra dar
- * visibilidade ao atendente de que a automação rodou; falha aqui nunca deve
- * afetar o fluxo de envio real, então é sempre best-effort.
- */
-async function registrarConfirmacaoNoChatwoot(waId: string, resultados: boolean[]): Promise<void> {
-  if (!CHATWOOT_BASE_URL || !CHATWOOT_API_ACCESS_TOKEN || !CHATWOOT_ACCOUNT_ID) return;
-
-  try {
-    const conversationId = await buscarConversaChatwoot(waId);
-    if (!conversationId) return;
-
-    const linhas = ROTULOS_CONFIRMACAO_CHATWOOT.map(
-      (rotulo, indice) => `${resultados[indice] ? "✅" : "❌"} ${rotulo}`,
-    );
-    const sucesso = resultados.filter(Boolean).length;
-    const conteudo = `🤖 Automação de boas-vindas — ${sucesso}/${resultados.length} enviadas:\n\n${linhas.join("\n")}`;
-
-    const resposta = await fetch(
-      `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations/${conversationId}/messages`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", api_access_token: CHATWOOT_API_ACCESS_TOKEN },
-        body: JSON.stringify({ content: conteudo, private: true }),
-      },
-    );
-
-    if (!resposta.ok) {
-      console.error(`[whatsapp/webhook] Chatwoot respondeu ${resposta.status} ao registrar confirmação`);
-    }
-  } catch (erro) {
-    console.error("[whatsapp/webhook] erro ao registrar confirmação no Chatwoot:", erro);
-  }
-}
-
-/** Acha a conversa mais recente do contato no inbox de WhatsApp, via busca por telefone. */
-async function buscarConversaChatwoot(waId: string): Promise<number | null> {
-  if (!CHATWOOT_BASE_URL || !CHATWOOT_API_ACCESS_TOKEN || !CHATWOOT_ACCOUNT_ID) return null;
-
-  const cabecalhos = { api_access_token: CHATWOOT_API_ACCESS_TOKEN };
-
-  const respostaContato = await fetch(
-    `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts/search?q=${encodeURIComponent(waId)}`,
-    { headers: cabecalhos },
-  );
-  if (!respostaContato.ok) return null;
-  const dadosContato = (await respostaContato.json()) as ChatwootContatoBusca;
-  const contatoId = dadosContato.payload?.[0]?.id;
-  if (!contatoId) return null;
-
-  const respostaConversas = await fetch(
-    `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts/${contatoId}/conversations`,
-    { headers: cabecalhos },
-  );
-  if (!respostaConversas.ok) return null;
-  const dadosConversas = (await respostaConversas.json()) as ChatwootConversasResposta;
-
-  const inboxIdAlvo = CHATWOOT_INBOX_ID ? Number(CHATWOOT_INBOX_ID) : null;
-  const conversas = (dadosConversas.payload ?? []).filter(
-    (conversa) => inboxIdAlvo === null || conversa.inbox_id === inboxIdAlvo,
-  );
-
-  return conversas.sort((a, b) => b.id - a.id)[0]?.id ?? null;
-}
-
-type GraphApiRespostaMensagens = {
-  messages?: { id: string }[];
-  error?: { message?: string };
-};
-
-async function chamarGraphApiMensagens(corpo: Record<string, unknown>): Promise<string | null> {
-  if (!META_ACCESS_TOKEN || !META_WHATSAPP_PHONE_NUMBER_ID) {
-    throw new Error("META_ACCESS_TOKEN ou META_WHATSAPP_PHONE_NUMBER_ID não configurados");
-  }
-
-  const resposta = await fetch(
-    `https://graph.facebook.com/${META_API_VERSION}/${META_WHATSAPP_PHONE_NUMBER_ID}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${META_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(corpo),
-    },
-  );
-
-  const dados = (await resposta.json()) as GraphApiRespostaMensagens;
-
-  if (!resposta.ok) {
-    throw new Error(dados.error?.message ?? `Graph API respondeu ${resposta.status}`);
-  }
-
-  return dados.messages?.[0]?.id ?? null;
 }
