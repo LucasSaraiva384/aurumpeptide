@@ -5,12 +5,9 @@ import { isSupabaseAdminConfigured, supabaseAdmin, type WhatsappContato } from "
 // Precisa do módulo `crypto` do Node pra validar a assinatura HMAC — não
 // roda em edge runtime.
 export const runtime = "nodejs";
-// A sequência de boas-vindas espera DELAY_ENTRE_MENSAGENS_MS entre cada
-// envio (propositalmente, pra não parecer um bloco único de texto) — isso
-// sozinho já soma ~9s, além da latência das chamadas à Graph API/Chatwoot.
-// Esse trabalho roda em segundo plano via `after()` (ver POST abaixo), mas a
-// função Vercel precisa continuar viva até ele terminar — daí o
-// maxDuration, acima do timeout padrão de 10s do plano Hobby.
+// O envio da mensagem de boas-vindas roda em segundo plano via `after()` (ver
+// POST abaixo), mas a função Vercel precisa continuar viva até ele terminar —
+// daí o maxDuration, acima do timeout padrão de 10s do plano Hobby.
 export const maxDuration = 30;
 
 const META_API_VERSION = process.env.META_API_VERSION || "v21.0";
@@ -18,7 +15,6 @@ const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
 const META_WHATSAPP_PHONE_NUMBER_ID = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
 const META_APP_SECRET = process.env.META_APP_SECRET;
 const WHATSAPP_WEBHOOK_VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aurumpeptide.com.br";
 // URL do webhook do Chatwoot (self-hosted) pra onde espelhamos o payload bruto
 // da Meta — mantém a automação de boas-vindas aqui, e alimenta o Chatwoot em
 // paralelo pra monitoramento/resposta manual. Ver docs/publicacao/log.md.
@@ -30,20 +26,21 @@ const CHATWOOT_API_ACCESS_TOKEN = process.env.CHATWOOT_API_ACCESS_TOKEN;
 const CHATWOOT_ACCOUNT_ID = process.env.CHATWOOT_ACCOUNT_ID;
 const CHATWOOT_INBOX_ID = process.env.CHATWOOT_INBOX_ID;
 
-// Sequência de boas-vindas aprovada pelo usuário em 2026-08-21 — 3 mensagens
-// separadas (ver DELAY_ENTRE_MENSAGENS_MS), não alterar sem nova aprovação.
-// Ajustar texto/tempo de espera é só editar as constantes abaixo.
+// Sequência de boas-vindas aprovada pelo usuário em 2026-09-02 — uma única
+// mensagem interativa com 2 botões (estilo confirmado pelo usuário a partir
+// de referência de concorrente), substituindo a versão anterior de 3
+// mensagens de texto + PDF. Tabela de preços em PDF fica de fora por ora.
+// Ajustar texto/botões é só editar as constantes abaixo.
 const MENSAGEM_1_BOAS_VINDAS = `Olá! 👋 Seja muito bem-vindo(a) à Aurum Peptide.
 
-É um prazer ter você por aqui. 🧬
+Trabalhamos com um catálogo premium de peptídeos para pesquisa — entre os mais procurados estão Tirzepatida, GHK-Cu, GLOW, Retatrutida e muito mais.
 
-Trabalhamos com um catálogo selecionado de peptídeos e produtos de pesquisa, sempre buscando oferecer qualidade, procedência e atendimento diferenciado.
+Quer entrar no nosso grupo VIP com promoções e condições exclusivas, ou prefere já falar direto com um vendedor?`;
 
-Em instantes vou te enviar duas informações importantes para você conhecer melhor a Aurum.`;
+const BOTAO_ID_GRUPO = "entrar_grupo";
+const BOTAO_ID_VENDEDOR = "falar_vendedor";
 
-const MENSAGEM_2_GRUPO_VIP = `🔥 Quer receber nossas melhores condições?
-
-Temos um grupo exclusivo no WhatsApp onde divulgamos promoções, oportunidades e condições especiais antes de serem divulgadas em outros canais.
+const MENSAGEM_GRUPO_VIP = `🔥 Aqui está o link do nosso grupo exclusivo no WhatsApp, onde divulgamos promoções, oportunidades e condições especiais antes de qualquer outro canal:
 
 👇 Entre pelo link:
 
@@ -51,15 +48,10 @@ https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb?s=cl&p=i&mlu=0
 
 A participação é gratuita e as condições divulgadas no grupo podem ser por tempo ou estoque limitado.`;
 
-// PDF é enviado automaticamente logo em seguida (enviarTabelaPrecos) — texto
-// avisa que o anexo já vem, em vez de pedir pra responder "TABELA".
-const MENSAGEM_3_TABELA_PRECOS = `📋 Nossa tabela de preços atualizada também está aqui pra você.
+// Número do vendedor: +55 15 98189-0060.
+const MENSAGEM_FALAR_VENDEDOR = `Perfeito! 🙌 Você já pode falar diretamente com um de nossos vendedores por aqui:
 
-Nela você encontra nosso catálogo, marcas, apresentações e valores atuais — já te enviando o PDF a seguir.
-
-Se preferir, também podemos te ajudar a encontrar um produto específico.`;
-
-const DELAY_ENTRE_MENSAGENS_MS = 3_000;
+https://wa.me/5515981890060`;
 
 // -- Payload do webhook da Meta (só os campos usados aqui) --
 // https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/payload-examples
@@ -88,6 +80,9 @@ type MetaMessage = {
   id: string;
   type: string;
   text?: { body?: string };
+  // Presente quando `type === "interactive"` e a pessoa clicou num botão de
+  // resposta rápida (ver MENSAGEM_1_BOAS_VINDAS/enviarMensagemBotoes).
+  interactive?: { type?: string; button_reply?: { id: string; title: string } };
 };
 
 type MetaContact = {
@@ -119,13 +114,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // Responde à Meta imediatamente e processa em segundo plano via `after()`
-  // — a sequência de boas-vindas sozinha leva ~10-13s (delays propositais +
-  // chamadas de API), e se a resposta do webhook demorasse isso tudo, a
-  // Meta poderia interpretar como falha e reentregar o mesmo webhook
-  // (retry), disparando a sequência duas vezes em paralelo. A trava atômica
-  // em reivindicarBoasVindas cobre esse cenário de qualquer forma, mas
-  // responder rápido evita o retry na origem. Qualquer erro de
-  // processamento é logado, nunca propagado — sempre 200.
+  // — se a resposta do webhook demorasse até o fim do processamento
+  // (chamadas à Graph API/Chatwoot), a Meta poderia interpretar como falha e
+  // reentregar o mesmo webhook (retry), disparando o envio duas vezes em
+  // paralelo. A trava atômica em reivindicarBoasVindas cobre esse cenário de
+  // qualquer forma, mas responder rápido evita o retry na origem. Qualquer
+  // erro de processamento é logado, nunca propagado — sempre 200.
   try {
     const payload = JSON.parse(corpoBruto) as MetaWebhookPayload;
     after(() =>
@@ -207,13 +201,29 @@ async function processarMensagem(mensagem: MetaMessage, contato?: MetaContact): 
   await registrarMensagem(waId, "recebida", mensagem.type, mensagem.text?.body ?? null, mensagem.id);
   await buscarOuCriarContato(waId, nomePerfil);
 
+  // Clique num botão da mensagem de boas-vindas — independente de já ter
+  // reivindicado as boas-vindas antes (é sempre uma mensagem subsequente).
+  if (mensagem.type === "interactive" && mensagem.interactive?.type === "button_reply") {
+    await processarCliqueBotao(waId, mensagem.interactive.button_reply?.id);
+    return;
+  }
+
   // Reivindica atomicamente o direito de enviar as boas-vindas (UPDATE
   // condicional no banco, não um "SELECT depois UPDATE" separado) — só
   // quem conseguir marcar a linha ainda não marcada deve enviar. Fecha a
   // janela de corrida caso a Meta reentregue o mesmo webhook (retry) antes
-  // da primeira execução terminar (a sequência inteira leva ~10-13s).
+  // da primeira execução terminar.
   if (await reivindicarBoasVindas(waId)) {
     await enviarBoasVindas(waId);
+  }
+}
+
+/** Reage ao clique num dos botões da mensagem de boas-vindas, enviando o link correspondente. */
+async function processarCliqueBotao(waId: string, botaoId: string | undefined): Promise<void> {
+  if (botaoId === BOTAO_ID_GRUPO) {
+    await enviarMensagemTexto(waId, MENSAGEM_GRUPO_VIP);
+  } else if (botaoId === BOTAO_ID_VENDEDOR) {
+    await enviarMensagemTexto(waId, MENSAGEM_FALAR_VENDEDOR);
   }
 }
 
@@ -295,30 +305,19 @@ async function registrarMensagem(
 }
 
 /**
- * Envia a sequência de boas-vindas (3 mensagens de texto espaçadas por
- * DELAY_ENTRE_MENSAGENS_MS + tabela de preços em PDF) e registra no Chatwoot
- * uma nota privada confirmando o que foi enviado — mesmo que algum envio
- * tenha falhado no meio (cada envio é isolado — falha em um não impede os
- * seguintes; uma falha pontual significa que essa pessoa não recebeu um dos
- * envios, refletido na nota do Chatwoot). O contato já foi marcado como
- * atendido antes desta função rodar, em reivindicarBoasVindas.
+ * Envia a mensagem de boas-vindas com os 2 botões (grupo VIP / falar com
+ * vendedor) e registra no Chatwoot uma nota privada confirmando o envio. O
+ * contato já foi marcado como atendido antes desta função rodar, em
+ * reivindicarBoasVindas. Os links de cada opção só são enviados depois,
+ * quando a pessoa clica no botão (ver processarCliqueBotao).
  */
 async function enviarBoasVindas(waId: string): Promise<void> {
-  const resultados: boolean[] = [];
+  const sucesso = await enviarMensagemBotoes(waId, MENSAGEM_1_BOAS_VINDAS, [
+    { id: BOTAO_ID_GRUPO, title: "Entrar no grupo" },
+    { id: BOTAO_ID_VENDEDOR, title: "Falar com vendedor" },
+  ]);
 
-  resultados.push(await enviarMensagemTexto(waId, MENSAGEM_1_BOAS_VINDAS));
-  await esperar(DELAY_ENTRE_MENSAGENS_MS);
-  resultados.push(await enviarMensagemTexto(waId, MENSAGEM_2_GRUPO_VIP));
-  await esperar(DELAY_ENTRE_MENSAGENS_MS);
-  resultados.push(await enviarMensagemTexto(waId, MENSAGEM_3_TABELA_PRECOS));
-  await esperar(DELAY_ENTRE_MENSAGENS_MS);
-  resultados.push(await enviarTabelaPrecos(waId));
-
-  await registrarConfirmacaoNoChatwoot(waId, resultados);
-}
-
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  await registrarConfirmacaoNoChatwoot(waId, [sucesso]);
 }
 
 async function enviarMensagemTexto(waId: string, texto: string): Promise<boolean> {
@@ -337,33 +336,34 @@ async function enviarMensagemTexto(waId: string, texto: string): Promise<boolean
   }
 }
 
-async function enviarTabelaPrecos(waId: string): Promise<boolean> {
-  const linkPdf = `${SITE_URL}/tabela-aurum-peptide.pdf`;
+/** Botões de resposta rápida — a Cloud API limita a 3 por mensagem e 20 caracteres por título. */
+async function enviarMensagemBotoes(
+  waId: string,
+  texto: string,
+  botoes: { id: string; title: string }[],
+): Promise<boolean> {
   try {
     const waMessageId = await chamarGraphApiMensagens({
       messaging_product: "whatsapp",
       to: waId,
-      type: "document",
-      document: {
-        link: linkPdf,
-        filename: "Tabela Aurum Peptide.pdf",
-        caption: "Tabela de preços atualizada",
+      type: "interactive",
+      interactive: {
+        type: "button",
+        body: { text: texto },
+        action: {
+          buttons: botoes.map((botao) => ({ type: "reply", reply: botao })),
+        },
       },
     });
-    await registrarMensagem(waId, "enviada", "document", linkPdf, waMessageId);
+    await registrarMensagem(waId, "enviada", "interactive", texto, waMessageId);
     return true;
   } catch (erro) {
-    console.error("[whatsapp/webhook] erro ao enviar tabela de preços:", erro);
+    console.error("[whatsapp/webhook] erro ao enviar mensagem com botões:", erro);
     return false;
   }
 }
 
-const ROTULOS_CONFIRMACAO_CHATWOOT = [
-  "Mensagem 1 (boas-vindas)",
-  "Mensagem 2 (Grupo VIP)",
-  "Mensagem 3 (tabela de preços)",
-  "PDF (tabela de preços)",
-];
+const ROTULOS_CONFIRMACAO_CHATWOOT = ["Mensagem de boas-vindas (com botões)"];
 
 type ChatwootContatoBusca = { payload?: { id: number }[] };
 type ChatwootConversa = { id: number; inbox_id: number };
