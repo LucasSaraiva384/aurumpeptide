@@ -15,6 +15,7 @@ const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
 const META_WHATSAPP_PHONE_NUMBER_ID = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
 const META_APP_SECRET = process.env.META_APP_SECRET;
 const WHATSAPP_WEBHOOK_VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aurumpeptide.com.br";
 // URL do webhook do Chatwoot (self-hosted) pra onde espelhamos o payload bruto
 // da Meta — mantém a automação de boas-vindas aqui, e alimenta o Chatwoot em
 // paralelo pra monitoramento/resposta manual. Ver docs/publicacao/log.md.
@@ -31,11 +32,16 @@ const CHATWOOT_INBOX_ID = process.env.CHATWOOT_INBOX_ID;
 // de referência de concorrente), substituindo a versão anterior de 3
 // mensagens de texto + PDF. Tabela de preços em PDF fica de fora por ora.
 // Ajustar texto/botões é só editar as constantes abaixo.
-const MENSAGEM_1_BOAS_VINDAS = `Olá! 👋 Seja muito bem-vindo(a) à Aurum Peptide.
+const MENSAGEM_1_BOAS_VINDAS = `Olá! Tudo bem? 😊
 
-Trabalhamos com um catálogo premium de peptídeos para pesquisa — entre os mais procurados estão Tirzepatida, GHK-Cu, GLOW, Retatrutida e muito mais.
+Temos uma novidade para você! 🧬
 
-Quer entrar no nosso grupo VIP com promoções e condições exclusivas, ou prefere já falar direto com um vendedor?`;
+Gostaria de conhecer a linha premium de peptídeos da Aurum Peptide?
+
+Posso te enviar mais informações?`;
+
+// Banner exibido como cabeçalho da mensagem de boas-vindas (ver enviarBoasVindas) — arquivo em apps/site/public/.
+const URL_BANNER_BOAS_VINDAS = `${SITE_URL}/whatsapp-banner-boas-vindas.png`;
 
 const BOTAO_ID_GRUPO = "entrar_grupo";
 const BOTAO_ID_VENDEDOR = "falar_vendedor";
@@ -312,7 +318,7 @@ async function registrarMensagem(
  * quando a pessoa clica no botão (ver processarCliqueBotao).
  */
 async function enviarBoasVindas(waId: string): Promise<void> {
-  const sucesso = await enviarMensagemBotoes(waId, MENSAGEM_1_BOAS_VINDAS, [
+  const sucesso = await enviarMensagemBotoes(waId, MENSAGEM_1_BOAS_VINDAS, URL_BANNER_BOAS_VINDAS, [
     { id: BOTAO_ID_GRUPO, title: "Entrar no grupo" },
     { id: BOTAO_ID_VENDEDOR, title: "Falar com vendedor" },
   ]);
@@ -340,6 +346,7 @@ async function enviarMensagemTexto(waId: string, texto: string): Promise<boolean
 async function enviarMensagemBotoes(
   waId: string,
   texto: string,
+  urlImagemCabecalho: string,
   botoes: { id: string; title: string }[],
 ): Promise<boolean> {
   try {
@@ -349,6 +356,7 @@ async function enviarMensagemBotoes(
       type: "interactive",
       interactive: {
         type: "button",
+        header: { type: "image", image: { link: urlImagemCabecalho } },
         body: { text: texto },
         action: {
           buttons: botoes.map((botao) => ({ type: "reply", reply: botao })),
