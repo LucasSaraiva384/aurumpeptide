@@ -227,7 +227,10 @@ async function enviarMensagemTexto(waId: string, texto: string): Promise<boolean
       messaging_product: "whatsapp",
       to: waId,
       type: "text",
-      text: { body: texto },
+      // preview_url: sem isso a Cloud API nunca gera o preview de link — nem
+      // o cartão nativo "Entrar no grupo" pro link do WhatsApp, nem preview
+      // comum de outros links.
+      text: { body: texto, preview_url: true },
     });
     await registrarMensagem(waId, "enviada", "text", texto, waMessageId);
     return true;
