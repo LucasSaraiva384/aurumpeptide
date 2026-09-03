@@ -42,6 +42,10 @@ export const BOTAO_ID_VENDEDOR = "falar_vendedor";
 const TEXTO_BOTAO_GRUPO = "Entrar no grupo";
 const TEXTO_BOTAO_VENDEDOR_QUICK_REPLY = "Falar com vendedor";
 
+// Link puro do grupo como texto (preview_url:true) não gera o cartão nativo
+// "Entrar no grupo" em mensagens de negócio — confirmado na prática em
+// 2026-09-02 (aparece só como texto azul sublinhado, sem cartão). Por isso o
+// link vira um botão CTA de verdade, igual ao de "Fala com vendedor".
 const MENSAGEM_GRUPO_VIP = `🚨 PROMOÇÃO AURUM PEPTIDE COMEÇOU! 🧬🔥
 
 As condições especiais da Aurum Peptide já estão liberadas! 🤩
@@ -57,13 +61,14 @@ As condições especiais da Aurum Peptide já estão liberadas! 🤩
 💎 Condições exclusivas por tempo limitado
 ⏳ Aproveite enquanto durarem os estoques!
 
-👉 Confira todas as promoções pelo nosso grupo:
-
-https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb?s=cl&p=i&mlu=0
-
 📋 Tabela completa e novidades fixadas no grupo!
 
+Toque no botão abaixo pra entrar:
+
 Aurum Peptide — Ciência • Pureza • Excelência 🧬⚜️`;
+
+const TEXTO_BOTAO_GRUPO_CTA = "Entrar no grupo";
+const URL_GRUPO_VIP = "https://chat.whatsapp.com/JqgzFxfecrnCnJLrBNyEhb?s=cl&p=i&mlu=0";
 
 const MENSAGEM_FALAR_VENDEDOR = "Perfeito! 🙌 Toque no botão abaixo pra falar direto com um vendedor:";
 const TEXTO_BOTAO_VENDEDOR_CTA = "Fala com vendedor";
@@ -116,13 +121,10 @@ export function identificarBotaoPeloTexto(texto: string | null | undefined): str
   return undefined;
 }
 
-/** Reage ao clique num dos botões da mensagem de boas-vindas, enviando o link correspondente. */
+/** Reage ao clique num dos botões da mensagem de boas-vindas, enviando o link correspondente como botão CTA. */
 async function processarCliqueBotao(waId: string, botaoId: string | undefined): Promise<void> {
   if (botaoId === BOTAO_ID_GRUPO) {
-    // Link puro do grupo no corpo do texto — o próprio WhatsApp renderiza
-    // como cartão nativo com botão "Entrar no grupo", sem precisar de botão
-    // customizado aqui.
-    await enviarMensagemTexto(waId, MENSAGEM_GRUPO_VIP);
+    await enviarMensagemCtaUrl(waId, MENSAGEM_GRUPO_VIP, TEXTO_BOTAO_GRUPO_CTA, URL_GRUPO_VIP);
   } else if (botaoId === BOTAO_ID_VENDEDOR) {
     await enviarMensagemCtaUrl(waId, MENSAGEM_FALAR_VENDEDOR, TEXTO_BOTAO_VENDEDOR_CTA, URL_WHATSAPP_VENDEDOR);
   }
@@ -219,25 +221,6 @@ async function enviarBoasVindas(waId: string): Promise<void> {
   ]);
 
   await registrarConfirmacaoNoChatwoot(waId, [sucesso]);
-}
-
-async function enviarMensagemTexto(waId: string, texto: string): Promise<boolean> {
-  try {
-    const waMessageId = await chamarGraphApiMensagens({
-      messaging_product: "whatsapp",
-      to: waId,
-      type: "text",
-      // preview_url: sem isso a Cloud API nunca gera o preview de link — nem
-      // o cartão nativo "Entrar no grupo" pro link do WhatsApp, nem preview
-      // comum de outros links.
-      text: { body: texto, preview_url: true },
-    });
-    await registrarMensagem(waId, "enviada", "text", texto, waMessageId);
-    return true;
-  } catch (erro) {
-    console.error("[whatsappAutomacao] erro ao enviar mensagem de texto:", erro);
-    return false;
-  }
 }
 
 /** Botões de resposta rápida — a Cloud API limita a 3 por mensagem e 20 caracteres por título. */
