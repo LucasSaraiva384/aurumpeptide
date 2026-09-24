@@ -2,6 +2,11 @@ import type { MetadataRoute } from "next";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { absoluteUrl, buildProductSlug } from "@/lib/seo";
 
+// Sem isto o sitemap é gerado uma única vez no build e congela: produtos
+// cadastrados no admin depois do último deploy ficavam de fora. Regenera a
+// cada hora a partir do Supabase.
+export const revalidate = 3600;
+
 // Query enxuta, só o necessário para montar a URL + lastModified de cada
 // produto — não reaproveita o tipo `Produto` completo do catálogo.
 type ProdutoSitemap = { id: string; nome: string; seo_slug: string | null; updated_at: string };
