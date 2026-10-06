@@ -63,8 +63,14 @@ export function ProdutoForm({
   const [seoCanonical, setSeoCanonical] = useState(produto?.seo_canonical ?? "");
   const [seoOgImage, setSeoOgImage] = useState(produto?.seo_og_image ?? "");
   const [seoRobots, setSeoRobots] = useState(produto?.seo_robots ?? "");
+  const [grupoVariante, setGrupoVariante] = useState(produto?.grupo_variante ?? "");
+  const [varianteRotulo, setVarianteRotulo] = useState(produto?.variante_rotulo ?? "");
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+
+  // `select("*")` só traz grupo_variante depois que supabase/variantes.sql
+  // foi aplicado — usado para decidir se as colunas vão no payload.
+  const variantesDisponiveis = Boolean(produto && "grupo_variante" in produto);
 
   function toggleAplicacao(id: string, marcado: boolean) {
     setAplicacaoIds((atuais) => (marcado ? [...atuais, id] : atuais.filter((atual) => atual !== id)));
@@ -146,6 +152,16 @@ export function ProdutoForm({
       seo_canonical: seoCanonical || null,
       seo_og_image: seoOgImage || null,
       seo_robots: seoRobots || null,
+      // Variantes (supabase/variantes.sql): só entram no payload se a
+      // migração já foi aplicada (o produto carregado traz a coluna) ou se
+      // o usuário preencheu algo — assim salvar um produto comum continua
+      // funcionando antes da migração existir no banco.
+      ...(variantesDisponiveis || grupoVariante.trim() || varianteRotulo.trim()
+        ? {
+            grupo_variante: grupoVariante.trim().toLowerCase() || null,
+            variante_rotulo: varianteRotulo.trim() || null,
+          }
+        : {}),
     };
 
     let produtoId = produto?.id;
@@ -278,6 +294,34 @@ export function ProdutoForm({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="grupoVariante">Grupo de variante</Label>
+              <Input
+                id="grupoVariante"
+                value={grupoVariante}
+                onChange={(e) => setGrupoVariante(e.target.value)}
+                placeholder="ex.: retagen"
+              />
+              <p className="text-xs text-muted-foreground">
+                Opcional. Produtos com o mesmo grupo viram um card só no site, com seletor de dosagem.
+                Cada variante mantém estoque, custo e preço próprios.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="varianteRotulo">Rótulo da variante</Label>
+              <Input
+                id="varianteRotulo"
+                value={varianteRotulo}
+                onChange={(e) => setVarianteRotulo(e.target.value)}
+                placeholder="ex.: 120mg"
+              />
+              <p className="text-xs text-muted-foreground">
+                Texto curto do botão no site e da opção em compras/vendas (ex.: 120mg, 160mg).
+              </p>
+            </div>
+          </div>
+
           {aplicacoes.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <Label>Aplicações</Label>
@@ -365,7 +409,9 @@ export function ProdutoForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="estoqueAtual">Estoque atual</Label>
+              <Label htmlFor="estoqueAtual">
+                Estoque atual{varianteRotulo.trim() ? ` (${varianteRotulo.trim()})` : ""}
+              </Label>
               <Input
                 id="estoqueAtual"
                 required

@@ -36,7 +36,21 @@ export type Produto = {
   seo_canonical: string | null;
   seo_og_image: string | null;
   seo_robots: string | null;
+  // Variantes (supabase/variantes.sql): cada variante é uma linha própria;
+  // grupo_variante só agrupa (ex.: 'retagen'), variante_rotulo é o rótulo
+  // do seletor (ex.: '120mg'). Null = produto sem variantes. Antes da
+  // migração ser aplicada, lib/produtos.ts::selectProdutosComVariantes
+  // preenche os dois com null.
+  grupo_variante: string | null;
+  variante_rotulo: string | null;
 };
+
+/**
+ * Produto como exibido num card de grid: quando o produto representa um
+ * grupo de variantes (ver `agruparVariantes`), `variantesRotulos` traz os
+ * rótulos de todas as variantes do grupo (ex.: ["120mg", "160mg"]).
+ */
+export type ProdutoVitrine = Produto & { variantesRotulos?: string[] };
 
 /** Formato comum das 3 tabelas de catálogo administrável (categorias/marcas/aplicacoes). */
 type EntidadeCatalogoBase = {

@@ -44,6 +44,13 @@ export type Produto = {
   seo_canonical: string | null;
   seo_og_image: string | null;
   seo_robots: string | null;
+  // Variantes (supabase/variantes.sql): cada variante (ex.: Retagen 120mg /
+  // 160mg) continua sendo uma linha própria, com estoque/custo/preço
+  // próprios; grupo_variante só agrupa (ex.: 'retagen') e variante_rotulo é
+  // o rótulo curto (ex.: '120mg'). Opcionais no tipo porque, antes da
+  // migração ser aplicada, `select("*")` não traz essas colunas.
+  grupo_variante?: string | null;
+  variante_rotulo?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -243,6 +250,8 @@ export type Database = {
             | "seo_canonical"
             | "seo_og_image"
             | "seo_robots"
+            | "grupo_variante"
+            | "variante_rotulo"
             | "created_at"
             | "updated_at"
           >

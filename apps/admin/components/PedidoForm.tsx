@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 import { currencyFormatter } from "@/lib/format";
 import type { Pedido, PedidoItem as PedidoItemRow } from "@/lib/types";
+import { ordenarOpcoesProduto, rotuloOpcaoProduto, selectProdutosComVariantes } from "@/lib/variantes";
 
 interface ClienteOpcao {
   id: string;
@@ -30,6 +31,10 @@ interface ProdutoOpcao {
   nome: string;
   preco: number;
   estoque_atual: number;
+  // Variantes (supabase/variantes.sql): cada dosagem é um produto_id
+  // próprio — o seletor mostra "Nome — 120mg" e grava o id da variante.
+  grupo_variante: string | null;
+  variante_rotulo: string | null;
 }
 
 interface ItemPedido {
@@ -89,13 +94,14 @@ export function PedidoForm({
     // Na edição, um item pode referenciar um produto que hoje está
     // inativo/descontinuado — buscar todos os produtos garante que ele
     // continue aparecendo no select em vez de sumir da lista.
-    let query = supabase.from("produtos").select("id, nome, preco, estoque_atual");
-    if (!isEdicao) {
-      query = query.eq("ativo", true);
-    }
-
-    query.order("nome").then(({ data }) => {
-      const lista = data ?? [];
+    selectProdutosComVariantes((colunasVariante) => {
+      let query = supabase.from("produtos").select(`id, nome, preco, estoque_atual${colunasVariante}`);
+      if (!isEdicao) {
+        query = query.eq("ativo", true);
+      }
+      return query.order("nome").returns<ProdutoOpcao[]>();
+    }).then(({ data }) => {
+      const lista = ordenarOpcoesProduto(data ?? []);
       setProdutos(lista);
       if (!isEdicao) {
         setItens([novoItem(lista)]);
@@ -306,7 +312,7 @@ export function PedidoForm({
                     <SelectContent>
                       {produtos.map((produto) => (
                         <SelectItem key={produto.id} value={produto.id}>
-                          {produto.nome} (estoque: {produto.estoque_atual})
+                          {rotuloOpcaoProduto(produto)} (estoque: {produto.estoque_atual})
                         </SelectItem>
                       ))}
                     </SelectContent>

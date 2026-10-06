@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Container } from "@aurum/ui";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import type { Aplicacao, Produto } from "@/lib/types";
+import type { Aplicacao, Produto, ProdutoVitrine } from "@/lib/types";
+import { agruparVariantes, selectProdutosComVariantes } from "@/lib/produtos";
 import { absoluteUrl, buildAplicacaoMetadata } from "@/lib/seo";
 import { breadcrumbSchema, collectionPageSchema } from "@/lib/schema";
 import { JsonLd } from "@/components/JsonLd";
@@ -17,7 +18,7 @@ export const dynamic = "force-dynamic";
 // dentro da mesma requisição. Diferente do produto (slug computado), o
 // slug de aplicação é uma coluna real — resolve direto via `.eq("slug", …)`.
 const getAplicacaoComProdutos = cache(
-  async (slug: string): Promise<{ aplicacao: Aplicacao | null; produtos: Produto[] }> => {
+  async (slug: string): Promise<{ aplicacao: Aplicacao | null; produtos: ProdutoVitrine[] }> => {
     if (!isSupabaseConfigured) return { aplicacao: null, produtos: [] };
 
     const { data: aplicacao } = await supabase
@@ -40,17 +41,20 @@ const getAplicacaoComProdutos = cache(
     const produtoIds = (vinculos ?? []).map((vinculo) => vinculo.produto_id);
     if (produtoIds.length === 0) return { aplicacao, produtos: [] };
 
-    const { data: produtos } = await supabase
-      .from("produtos")
-      .select(
-        "id, nome, descricao, preco, categoria, categoria_id, marca_id, keywords, destaque, mais_vendido, lancamento, promocao, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots",
-      )
-      .in("id", produtoIds)
-      .eq("ativo", true)
-      .eq("publicado", true)
-      .returns<Produto[]>();
+    const { data: produtos } = await selectProdutosComVariantes((colunasVariante) =>
+      supabase
+        .from("produtos")
+        .select(
+          `id, nome, descricao, preco, categoria, categoria_id, marca_id, keywords, destaque, mais_vendido, lancamento, promocao, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots${colunasVariante}`,
+        )
+        .in("id", produtoIds)
+        .eq("ativo", true)
+        .eq("publicado", true)
+        .returns<Produto[]>(),
+    );
 
-    return { aplicacao, produtos: produtos ?? [] };
+    // Variantes do mesmo grupo viram um card só (lib/produtos.ts).
+    return { aplicacao, produtos: agruparVariantes(produtos ?? []) };
   },
 );
 

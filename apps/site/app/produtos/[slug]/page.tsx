@@ -11,6 +11,8 @@ import { JsonLd } from "@/components/JsonLd";
 import { WhatsappButtonLink } from "@/components/WhatsappButtonLink";
 import { absoluteUrl, buildProductMetadata, buildProductSlug } from "@/lib/seo";
 import { breadcrumbSchema, productSchema } from "@/lib/schema";
+import { selectProdutosComVariantes, variantesDoGrupo } from "@/lib/produtos";
+import { VarianteSelector } from "@/components/VarianteSelector";
 import type { Produto } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -24,14 +26,16 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const getProdutosAtivos = cache(async (): Promise<Produto[]> => {
   if (!isSupabaseConfigured) return [];
 
-  const { data, error } = await supabase
-    .from("produtos")
-    .select(
-      "id, nome, descricao, preco, categoria, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots",
-    )
-    .eq("ativo", true)
-    .eq("publicado", true)
-    .returns<Produto[]>();
+  const { data, error } = await selectProdutosComVariantes((colunasVariante) =>
+    supabase
+      .from("produtos")
+      .select(
+        `id, nome, descricao, preco, categoria, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots${colunasVariante}`,
+      )
+      .eq("ativo", true)
+      .eq("publicado", true)
+      .returns<Produto[]>(),
+  );
 
   if (error) return [];
   return data ?? [];
@@ -124,6 +128,9 @@ export default async function ProdutoPage({
   }
 
   const urlCanonica = buildProductMetadata(produto).canonical;
+  // Cada variante é uma página própria (preço, imagens, descrição, CTA e
+  // canonical dela mesma) — o seletor só navega entre as páginas irmãs.
+  const variantes = variantesDoGrupo(produto, await getProdutosAtivos());
   const breadcrumbItems = [
     { name: "Início", url: absoluteUrl("/") },
     ...(produto.categoria ? [{ name: produto.categoria, url: absoluteUrl("/produtos") }] : []),
@@ -155,6 +162,17 @@ export default async function ProdutoPage({
             <p className="whitespace-pre-line leading-relaxed text-aurum-ice/80">
               {produto.descricao}
             </p>
+          )}
+          {variantes.length > 1 && (
+            <VarianteSelector
+              rotulo="Dosagem"
+              atualId={produto.id}
+              opcoes={variantes.map((variante) => ({
+                id: variante.id,
+                rotulo: variante.variante_rotulo ?? variante.nome,
+                href: `/produtos/${buildProductSlug(variante)}`,
+              }))}
+            />
           )}
           <p className="font-heading text-2xl text-aurum-gold">
             {currencyFormatter.format(produto.preco)}

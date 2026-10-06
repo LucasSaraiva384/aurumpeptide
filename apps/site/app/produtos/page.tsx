@@ -2,8 +2,8 @@ import { cache, Suspense } from "react";
 import type { Metadata } from "next";
 import { Container } from "@aurum/ui";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import type { Aplicacao, Categoria, Marca, Produto, ProdutoAplicacao, ProdutoComRelacoes } from "@/lib/types";
-import { anexarRelacoes } from "@/lib/produtos";
+import type { Aplicacao, Categoria, Marca, Produto, ProdutoAplicacao, ProdutoComRelacoes, ProdutoVitrine } from "@/lib/types";
+import { agruparVariantes, anexarRelacoes, selectProdutosComVariantes } from "@/lib/produtos";
 import { normalizarBusca } from "@/lib/busca";
 import { absoluteUrl, buildCatalogoMetadata } from "@/lib/seo";
 import { breadcrumbSchema, collectionPageSchema } from "@/lib/schema";
@@ -87,14 +87,16 @@ const getCatalogo = cache(async (): Promise<CatalogoData> => {
   }
 
   const [produtosRes, categoriasRes, marcasRes, aplicacoesRes, produtoAplicacoesRes] = await Promise.all([
-    supabase
-      .from("produtos")
-      .select(
-        "id, nome, descricao, preco, categoria, categoria_id, marca_id, keywords, destaque, mais_vendido, lancamento, promocao, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots, created_at",
-      )
-      .eq("ativo", true)
-      .eq("publicado", true)
-      .returns<ProdutoComData[]>(),
+    selectProdutosComVariantes((colunasVariante) =>
+      supabase
+        .from("produtos")
+        .select(
+          `id, nome, descricao, preco, categoria, categoria_id, marca_id, keywords, destaque, mais_vendido, lancamento, promocao, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots, created_at${colunasVariante}`,
+        )
+        .eq("ativo", true)
+        .eq("publicado", true)
+        .returns<ProdutoComData[]>(),
+    ),
     supabase
       .from("categorias")
       .select("id, nome, slug, descricao, imagem_url, ordem, ativo")
@@ -134,7 +136,7 @@ function filtrarEOrdenar(
   produtos: ProdutoComRelacoes[],
   filtros: FiltrosNormalizados,
   criadoEmPorId: Map<string, string>,
-): ProdutoComRelacoes[] {
+): Array<ProdutoComRelacoes & Pick<ProdutoVitrine, "variantesRotulos">> {
   const categorias = csv(filtros.categoria);
   const marcas = csv(filtros.marca);
   const aplicacoes = csv(filtros.aplicacao);
@@ -174,7 +176,10 @@ function filtrarEOrdenar(
     return true;
   });
 
-  const ordenados = [...filtrados];
+  // Variantes do mesmo grupo viram um card só (depois do filtro, para que
+  // ex. um filtro de preço que exclua uma dosagem ainda mostre a outra;
+  // antes da ordenação, para o card ocupar a posição certa).
+  const ordenados = agruparVariantes(filtrados, produtos);
   switch (filtros.ordenar) {
     case "vendidos":
       ordenados.sort((a, b) => Number(b.mais_vendido) - Number(a.mais_vendido));

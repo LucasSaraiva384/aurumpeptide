@@ -18,12 +18,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 import { currencyFormatter } from "@/lib/format";
 import type { Compra } from "@/lib/types";
+import { ordenarOpcoesProduto, rotuloOpcaoProduto, selectProdutosComVariantes } from "@/lib/variantes";
 
 type ProdutoOpcao = {
   id: string;
   nome: string;
   estoque_atual: number;
   custo_medio: number;
+  // Variantes (supabase/variantes.sql): cada dosagem é um produto_id
+  // próprio — o seletor mostra "Nome — 120mg" e grava o id da variante.
+  grupo_variante: string | null;
+  variante_rotulo: string | null;
 };
 
 interface ItemCompra {
@@ -60,17 +65,19 @@ export function CompraForm({ compra }: { compra?: Compra }) {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase
-      .from("produtos")
-      .select("id, nome, estoque_atual, custo_medio")
-      .order("nome")
-      .then(({ data }) => {
-        const lista = data ?? [];
-        setProdutos(lista);
-        if (!isEdicao) {
-          setItens([novoItem(lista)]);
-        }
-      });
+    selectProdutosComVariantes((colunasVariante) =>
+      supabase
+        .from("produtos")
+        .select(`id, nome, estoque_atual, custo_medio${colunasVariante}`)
+        .order("nome")
+        .returns<ProdutoOpcao[]>(),
+    ).then(({ data }) => {
+      const lista = ordenarOpcoesProduto(data ?? []);
+      setProdutos(lista);
+      if (!isEdicao) {
+        setItens([novoItem(lista)]);
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -199,7 +206,7 @@ export function CompraForm({ compra }: { compra?: Compra }) {
                   <SelectContent>
                     {produtos.map((produto) => (
                       <SelectItem key={produto.id} value={produto.id}>
-                        {produto.nome} (estoque: {produto.estoque_atual}, custo médio: {currencyFormatter.format(produto.custo_medio)})
+                        {rotuloOpcaoProduto(produto)} (estoque: {produto.estoque_atual}, custo médio: {currencyFormatter.format(produto.custo_medio)})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -255,7 +262,7 @@ export function CompraForm({ compra }: { compra?: Compra }) {
                       <SelectContent>
                         {produtos.map((produto) => (
                           <SelectItem key={produto.id} value={produto.id}>
-                            {produto.nome} (estoque: {produto.estoque_atual})
+                            {rotuloOpcaoProduto(produto)} (estoque: {produto.estoque_atual})
                           </SelectItem>
                         ))}
                       </SelectContent>

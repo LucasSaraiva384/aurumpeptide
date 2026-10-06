@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import type { Aplicacao, Categoria, Marca, Produto, ProdutoAplicacao } from "@/lib/types";
-import { anexarRelacoes } from "@/lib/produtos";
+import { agruparVariantes, anexarRelacoes, selectProdutosComVariantes } from "@/lib/produtos";
 import { buildProductSlug } from "@/lib/seo";
 import type { BuscaIndice } from "@/lib/busca";
 
@@ -20,14 +20,16 @@ export async function GET() {
   }
 
   const [produtosRes, categoriasRes, marcasRes, aplicacoesRes, produtoAplicacoesRes] = await Promise.all([
-    supabase
-      .from("produtos")
-      .select(
-        "id, nome, descricao, preco, categoria, categoria_id, marca_id, keywords, destaque, mais_vendido, lancamento, promocao, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots",
-      )
-      .eq("ativo", true)
-      .eq("publicado", true)
-      .returns<Produto[]>(),
+    selectProdutosComVariantes((colunasVariante) =>
+      supabase
+        .from("produtos")
+        .select(
+          `id, nome, descricao, preco, categoria, categoria_id, marca_id, keywords, destaque, mais_vendido, lancamento, promocao, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots${colunasVariante}`,
+        )
+        .eq("ativo", true)
+        .eq("publicado", true)
+        .returns<Produto[]>(),
+    ),
     supabase
       .from("categorias")
       .select("id, nome, slug, descricao, imagem_url, ordem, ativo")
@@ -63,7 +65,11 @@ export async function GET() {
   const aplicacoes = aplicacoesRes.data ?? [];
   const produtoAplicacoes = produtoAplicacoesRes.data ?? [];
 
-  const produtosComRelacoes = anexarRelacoes(produtos, categorias, marcas, aplicacoes, produtoAplicacoes);
+  // Variantes do mesmo grupo viram um resultado só; os rótulos de todas
+  // (ex.: "160mg") entram nas keywords para a busca ainda encontrá-lo.
+  const produtosComRelacoes = agruparVariantes(
+    anexarRelacoes(produtos, categorias, marcas, aplicacoes, produtoAplicacoes),
+  );
 
   const indice: BuscaIndice = {
     produtos: produtosComRelacoes.map((produto) => ({
@@ -73,7 +79,7 @@ export async function GET() {
       categoria: produto.categoriaRef?.nome ?? produto.categoria,
       marca: produto.marcaRef?.nome ?? null,
       aplicacoes: produto.aplicacoesRef.map((aplicacao) => aplicacao.nome),
-      keywords: produto.keywords,
+      keywords: [...new Set([...produto.keywords, ...(produto.variantesRotulos ?? [])])],
       descricao: produto.descricao,
       imagem: produto.imagens[0] ?? produto.imagem_url,
       preco: produto.preco,

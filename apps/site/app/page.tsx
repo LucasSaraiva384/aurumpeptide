@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Container, ButtonLink } from "@aurum/ui";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import type { Aplicacao, Produto } from "@/lib/types";
+import type { Aplicacao, Produto, ProdutoVitrine } from "@/lib/types";
+import { agruparVariantes, selectProdutosComVariantes } from "@/lib/produtos";
 import { absoluteUrl } from "@/lib/seo";
 import { webPageSchema } from "@/lib/schema";
 import { JsonLd } from "@/components/JsonLd";
@@ -44,15 +45,17 @@ async function getProdutosVitrine(): Promise<{ produtos: Produto[]; erro: string
     return { produtos: [], erro: "config" };
   }
 
-  const { data, error } = await supabase
-    .from("produtos")
-    .select(
-      "id, nome, descricao, preco, categoria, categoria_id, marca_id, keywords, destaque, mais_vendido, lancamento, promocao, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots",
-    )
-    .eq("ativo", true)
-    .eq("publicado", true)
-    .order("nome")
-    .returns<Produto[]>();
+  const { data, error } = await selectProdutosComVariantes((colunasVariante) =>
+    supabase
+      .from("produtos")
+      .select(
+        `id, nome, descricao, preco, categoria, categoria_id, marca_id, keywords, destaque, mais_vendido, lancamento, promocao, imagem_url, imagens, estoque_atual, ativo, publicado, seo_title, seo_description, seo_slug, seo_canonical, seo_og_image, seo_robots${colunasVariante}`,
+      )
+      .eq("ativo", true)
+      .eq("publicado", true)
+      .order("nome")
+      .returns<Produto[]>(),
+  );
 
   if (error) {
     return { produtos: [], erro: error.message };
@@ -79,10 +82,12 @@ async function getAplicacoesAtivas(): Promise<Aplicacao[]> {
 export default async function HomePage() {
   const [{ produtos, erro }, aplicacoes] = await Promise.all([getProdutosVitrine(), getAplicacoesAtivas()]);
 
-  const destaques = produtos.filter((produto) => produto.destaque);
-  const maisVendidos = produtos.filter((produto) => produto.mais_vendido);
-  const novidades = produtos.filter((produto) => produto.lancamento);
-  const promocoes = produtos.filter((produto) => produto.promocao);
+  // Variantes do mesmo grupo (ex.: Retagen 120mg/160mg) aparecem como um
+  // card só em cada vitrine — ver lib/produtos.ts::agruparVariantes.
+  const destaques = agruparVariantes(produtos.filter((produto) => produto.destaque), produtos);
+  const maisVendidos = agruparVariantes(produtos.filter((produto) => produto.mais_vendido), produtos);
+  const novidades = agruparVariantes(produtos.filter((produto) => produto.lancamento), produtos);
+  const promocoes = agruparVariantes(produtos.filter((produto) => produto.promocao), produtos);
 
   return (
     <>
@@ -149,7 +154,7 @@ export default async function HomePage() {
 
 /** Uma vitrine da Home (Destaques/Mais vendidos/Novidades/Promoções) — só
  * chamada quando `produtos.length > 0`, então sempre renderiza algo. */
-function VitrineGrupo({ eyebrow, titulo, produtos }: { eyebrow: string; titulo: string; produtos: Produto[] }) {
+function VitrineGrupo({ eyebrow, titulo, produtos }: { eyebrow: string; titulo: string; produtos: ProdutoVitrine[] }) {
   return (
     <ScrollReveal className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
