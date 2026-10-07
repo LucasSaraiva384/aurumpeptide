@@ -202,6 +202,54 @@ function filtrarEOrdenar(
   return ordenados;
 }
 
+// Seções do catálogo (sem ordenação explícita escolhida): cada produto entra
+// numa seção só, pela primeira aplicação dele nesta lista de prioridade.
+// "pele" vem antes de "anti-aging" na atribuição porque todo produto de
+// pele também tem anti-aging — assim GHK-Cu/Glow/AHK-Cu ficam em Pele e
+// Anti-aging fica com o que é longevidade sem ser de pele (ex.: NAD+).
+const PRIORIDADE_SECAO = [
+  "emagrecimento",
+  "pele",
+  "anti-aging",
+  "recuperacao",
+  "regeneracao",
+  "cognicao",
+  "performance",
+  "sono",
+  "libido",
+  "longevidade",
+  "saude-metabolica",
+];
+// Ordem de exibição: Emagrecimento e Anti-aging sempre no topo; as demais
+// seguem a `ordem` da tabela `aplicacoes`; "Outros" (sem aplicação
+// reconhecida, ex.: diluentes) sempre por último.
+const SECOES_NO_TOPO = ["emagrecimento", "anti-aging", "pele"];
+
+type Secao<T> = { slug: string; nome: string; produtos: T[] };
+
+function agruparPorSecao<T extends ProdutoComRelacoes>(produtos: T[], aplicacoes: Aplicacao[]): Secao<T>[] {
+  const porSlug = new Map<string, T[]>();
+  for (const produto of produtos) {
+    const slugsProduto = produto.aplicacoesRef.map((aplicacao) => aplicacao.slug);
+    const slug = PRIORIDADE_SECAO.find((candidato) => slugsProduto.includes(candidato)) ?? "outros";
+    porSlug.set(slug, [...(porSlug.get(slug) ?? []), produto]);
+  }
+
+  const ordemExibicao = [
+    ...SECOES_NO_TOPO,
+    ...aplicacoes.map((aplicacao) => aplicacao.slug).filter((slug) => !SECOES_NO_TOPO.includes(slug) && slug !== "outros"),
+    "outros",
+  ];
+
+  return ordemExibicao
+    .filter((slug) => porSlug.has(slug))
+    .map((slug) => ({
+      slug,
+      nome: aplicacoes.find((aplicacao) => aplicacao.slug === slug)?.nome ?? "Outros",
+      produtos: porSlug.get(slug) ?? [],
+    }));
+}
+
 export async function generateMetadata({
   searchParams,
 }: {
@@ -256,6 +304,10 @@ export default async function ProdutosPage({
     ? aplicacoes.find((aplicacao) => aplicacao.slug === aplicacaoUnica)?.nome ?? null
     : null;
   const meta = buildCatalogoMetadata({ ...filtros, categoriaNomes, aplicacaoNome });
+  // Com uma ordenação explícita (preço, A–Z, mais vendidos) o usuário espera
+  // a lista inteira nessa ordem — só divide em seções na ordem padrão.
+  const secoes =
+    !filtros.ordenar || filtros.ordenar === "recentes" ? agruparPorSecao(produtosFiltrados, aplicacoes) : null;
 
   return (
     <Container className="flex flex-col gap-10 py-16">
@@ -295,7 +347,31 @@ export default async function ProdutosPage({
               {produtosFiltrados.length}{" "}
               {produtosFiltrados.length === 1 ? "produto encontrado" : "produtos encontrados"}
             </p>
-            {produtosFiltrados.length === 0 ? <EmptyState /> : <ProductGrid produtos={produtosFiltrados} />}
+            {produtosFiltrados.length === 0 ? (
+              <EmptyState />
+            ) : secoes && secoes.length > 1 ? (
+              <div className="flex flex-col gap-14">
+                {secoes.map((secao) => (
+                  <section key={secao.slug} aria-labelledby={`secao-${secao.slug}`} className="flex flex-col gap-6">
+                    <div className="flex items-center gap-4">
+                      <h2
+                        id={`secao-${secao.slug}`}
+                        className="shrink-0 font-heading text-2xl text-aurum-ice"
+                      >
+                        {secao.nome}
+                      </h2>
+                      <span className="h-px flex-1 bg-gradient-to-r from-aurum-gold/50 to-transparent" aria-hidden="true" />
+                      <span className="shrink-0 text-xs uppercase tracking-[0.25em] text-aurum-ice/50">
+                        {secao.produtos.length} {secao.produtos.length === 1 ? "produto" : "produtos"}
+                      </span>
+                    </div>
+                    <ProductGrid produtos={secao.produtos} />
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <ProductGrid produtos={produtosFiltrados} />
+            )}
           </div>
         </div>
       )}
