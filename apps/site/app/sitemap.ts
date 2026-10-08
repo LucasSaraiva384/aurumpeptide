@@ -3,9 +3,10 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { absoluteUrl, buildProductSlug } from "@/lib/seo";
 
 // Sem isto o sitemap é gerado uma única vez no build e congela: produtos
-// cadastrados no admin depois do último deploy ficavam de fora. Regenera a
-// cada hora a partir do Supabase.
-export const revalidate = 3600;
+// cadastrados no admin depois do último deploy ficavam de fora. O
+// `revalidate = 3600` anterior não regenerava na Vercel (em 08/10 o sitemap
+// ainda era o do build de 07/10) — gera a cada requisição, como /produtos.
+export const dynamic = "force-dynamic";
 
 // Query enxuta, só o necessário para montar a URL + lastModified de cada
 // produto — não reaproveita o tipo `Produto` completo do catálogo.
