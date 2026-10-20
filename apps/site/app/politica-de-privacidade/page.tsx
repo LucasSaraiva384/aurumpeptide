@@ -39,10 +39,8 @@ export default function PoliticaDePrivacidadePage() {
       <div className="mx-auto flex max-w-2xl flex-col gap-10">
         <Secao titulo="Quem somos">
           <p>
-            Este site e os canais de atendimento da Aurum Peptide (incluindo o WhatsApp) são operados por{" "}
-            <strong className="text-aurum-ice">50.701.764 LUCAS VINICIUS LISBOA SARAIVA</strong>, CNPJ{" "}
-            <strong className="text-aurum-ice">50.701.764/0001-82</strong>, doravante &ldquo;Aurum Peptide&rdquo;,
-            &ldquo;nós&rdquo;. Esta política explica quais dados pessoais coletamos, para que usamos e quais são os
+            Este site e os canais de atendimento da Aurum Peptide (incluindo o WhatsApp) são operados pela Aurum Peptide,
+            doravante &ldquo;nós&rdquo;. Esta política explica quais dados pessoais coletamos, para que usamos e quais são os
             seus direitos, em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).
           </p>
         </Secao>
