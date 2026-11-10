@@ -8,7 +8,7 @@ import { absoluteUrl, buildProductSlug, SITE_URL } from "@/lib/seo";
 // usa Organization + WebSite (não LocalBusiness — decisão confirmada com o
 // usuário, ver plano de SEO técnico).
 
-const INSTAGRAM_URL = "https://www.instagram.com/aurumpeptide/";
+const INSTAGRAM_URL = "https://www.instagram.com/aurumpeptide.oficial/";
 const LOGO_URL = absoluteUrl("/logo-oficial-com-nome.png");
 
 export function organizationSchema() {

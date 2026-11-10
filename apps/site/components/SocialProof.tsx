@@ -1,7 +1,7 @@
 import { Container, Card, ButtonLink } from "@aurum/ui";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
-const INSTAGRAM_URL = "https://www.instagram.com/aurumpeptide/";
+const INSTAGRAM_URL = "https://www.instagram.com/aurumpeptide.oficial/";
 
 export function SocialProof() {
   return (
@@ -29,7 +29,7 @@ export function SocialProof() {
                 rel="noopener noreferrer"
                 variant="secondary"
               >
-                @aurumpeptide
+                @aurumpeptide.oficial
               </ButtonLink>
             </Card>
           </ScrollReveal>

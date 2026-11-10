@@ -4,7 +4,7 @@ import { Container, ButtonLink, Divider } from "@aurum/ui";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { WhatsappButtonLink } from "@/components/WhatsappButtonLink";
 
-const INSTAGRAM_URL = "https://www.instagram.com/aurumpeptide/";
+const INSTAGRAM_URL = "https://www.instagram.com/aurumpeptide.oficial/";
 
 export function Footer() {
   return (
@@ -34,7 +34,7 @@ export function Footer() {
             rel="noopener noreferrer"
             variant="ghost"
           >
-            @aurumpeptide
+            @aurumpeptide.oficial
           </ButtonLink>
         </div>
 
