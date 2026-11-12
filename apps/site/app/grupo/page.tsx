@@ -16,14 +16,9 @@ export const metadata: Metadata = {
 export default function GrupoVipPage() {
   return (
     <Container className="flex min-h-[70vh] flex-col items-center justify-center gap-8 py-16 text-center sm:py-24">
-      <Image
-        src="/logo-badge.png"
-        alt="Aurum Peptide"
-        width={96}
-        height={96}
-        className="rounded-full"
-        priority
-      />
+      <span className="relative block h-24 w-24 overflow-hidden rounded-3xl ring-1 ring-aurum-gold/30">
+        <Image src="/logo-badge.png" alt="Aurum Peptide" fill priority className="object-cover" />
+      </span>
       <div className="flex flex-col gap-4">
         <p className="text-sm uppercase tracking-[0.3em] text-aurum-gold">Grupo VIP</p>
         <h1 className="max-w-xl text-balance font-heading text-3xl leading-snug text-aurum-ice sm:text-4xl">
