@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Container, ButtonLink } from "@aurum/ui";
+import { Container } from "@aurum/ui";
+import { WhatsappButtonLink } from "@/components/WhatsappButtonLink";
 
 // Página de destino dos anúncios do Meta. O Meta não aceita chat.whatsapp.com
 // (nem redirecionamento para ele) como destino de anúncio de site, então o
@@ -29,9 +30,9 @@ export default function GrupoVipPage() {
           metabolismo, direto no seu WhatsApp.
         </p>
       </div>
-      <ButtonLink href={CONVITE_GRUPO_VIP} size="lg">
+      <WhatsappButtonLink href={CONVITE_GRUPO_VIP} size="lg" origem="grupo-vip">
         Entrar no Grupo VIP
-      </ButtonLink>
+      </WhatsappButtonLink>
       <p className="text-xs text-aurum-ice/50">Gratuito. Você pode sair quando quiser.</p>
     </Container>
   );
